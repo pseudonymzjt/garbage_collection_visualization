@@ -80,7 +80,7 @@ const LEVELS = [
       { text: 'Node b = new Node();', alwaysNormal: true },
       { text: 'Node c = new Node();', alwaysNormal: true },
       { text: 'b.next = c;', alwaysNormal: true },
-      { text: 'c.next = b; // 👈 剪断此线使引用计数归零', activeEdge: 'e-c-b', commentText: '        // c.next = b; // ✅ 已解绑' },
+      { text: 'c.next = b; // 👈 剪断此线使引用计数归零', activeEdge: 'e-c-b', commentText: 'c.next = b; // ✅ 已解绑' },
       { text: '', alwaysNormal: true },
       { text: '// 引用计数面对循环引用时的局限性：', alwaysNormal: true },
       { text: '// 即使 Root 不再引用，b 和 c 互相持有', alwaysNormal: true },
@@ -109,11 +109,13 @@ const LEVELS = [
     javaCode: [
       { text: 'public class DataHandler {', alwaysNormal: true },
       { text: '    private byte[] bigBuffer = new byte[150 * 1024 * 1024];', alwaysNormal: true },
-      { text: '    private HeavyComponent comp;', alwaysNormal: true },
+      { text: '', alwaysNormal: true },
+      { text: '    // ⚠️ 冗余直接引用 (Root → bigBuffer)', alwaysNormal: true },
+      { text: '    // 需断开此冗余链路', activeEdge: 'e-root-buf', commentText: '    // ✅ 冗余直接引用已断开' },
       { text: '', alwaysNormal: true },
       { text: '    public void clear() {', alwaysNormal: true },
-      { text: '        // 切断冗余强引用链路', alwaysNormal: true },
-      { text: '        this.bigBuffer = null; // ✅ 释放强引用', activeEdge: 'e-root-buf', commentText: '        // this.bigBuffer = null; // 仍需断开冗余链路' },
+      { text: '        // 切断核心引用 (HeavyComp → bigBuffer)', alwaysNormal: true },
+      { text: '        this.bigBuffer = null; // ✅ 释放强引用', activeEdge: 'e-comp-buf', commentText: '        // this.bigBuffer = null; // ✅ 已释放' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
@@ -476,6 +478,20 @@ function updateUI() {
     delBtn.style.backgroundColor = '';
   }
 
+  // ---- 关卡级别按钮禁用 ----
+  var btnMS = document.getElementById('btn-ms');
+  var btnRC = document.getElementById('btn-rc');
+  // Level 2: 强制执行引用计数（禁用 Mark-Sweep）
+  if (currentLevel === 2) {
+    btnMS.disabled = true;
+    btnMS.title = '❌ 本关卡限定使用引用计数 GC';
+    btnMS.style.opacity = '0.4';
+    btnRC.title = '使用引用计数 GC 解开循环引用';
+  } else {
+    btnMS.title = '⚡ 标记-清除 (Mark-Sweep)';
+    btnMS.style.opacity = '';
+  }
+
   // 模式指示器
   var indicator = document.getElementById('mode-indicator');
   var levelData = getLevelData();
@@ -492,6 +508,9 @@ function updateUI() {
   } else if (isDeleteEdgeMode) {
     bgColor = '#ef4444';
     text = '🗑️ 删除连线模式 — 依次点击两节点';
+  } else if (currentLevel === 2) {
+    bgColor = '#f97316';
+    text = '🔒 关卡 2 限制：仅可使用引用计数 (RC) 回收';
   } else if (currentLevel > 0) {
     bgColor = '#1e293b';
     text = '🎮 ' + levelData.name + ' — 按目标操作';
@@ -502,7 +521,7 @@ function updateUI() {
 
   indicator.textContent = text;
   indicator.style.backgroundColor = bgColor;
-  indicator.style.border = (isSimulating || linkingMode || isDeleteEdgeMode) ? '1px solid transparent' : '1px solid #334155';
+  indicator.style.border = (isSimulating || linkingMode || isDeleteEdgeMode || currentLevel === 2) ? '1px solid transparent' : '1px solid #334155';
 
   // 通关徽章
   var badge = document.getElementById('level-completed-badge');
@@ -519,7 +538,18 @@ function updateUI() {
   if (currentLevel > 0) {
     actionArea.innerHTML =
       '<button onclick="resetLevel()" style="background-color: #6b7280; width: 100%;">🔄 重置本关卡</button>';
-    hintArea.innerHTML = '💡 提示：右键点击节点可快速删除（含关联边）';
+
+    // 关卡专属提示
+    var levelHints = [
+      '', // 0: 沙盒
+      '💡 L1 提示：切断 staticCache → tempData 的连线，再运行 Mark-Sweep GC 回收 tempData（100MB）',
+      '💡 L2 提示：📛 只能使用引用计数 GC！剪断环路中的一条边，使引用计数归零',
+      '💡 L3 提示：删除冗余强引用边（Root → bigBuffer 和 HeavyComp → bigBuffer），使内存 ≤ 10MB',
+      '💡 L4 提示：卸下组件后，斩断 EventPublisher → Listener 的连接',
+      '💡 L5 提示：切断 ThreadLocalMap → UserContext 的边来清理 ThreadLocal',
+      '💡 L6 提示：清除 Timer 紫色节点与 JVM_Roots 的连接并运行 GC',
+    ];
+    hintArea.innerHTML = levelHints[currentLevel] || '💡 提示：右键点击节点可快速删除（含关联边）';
   } else {
     actionArea.innerHTML = '';
     hintArea.innerHTML = '沙盒模式 — 自由编辑画布，运行 GC 算法观察效果';
@@ -712,7 +742,7 @@ function handleLevelChange(value) {
   var level = LEVELS[newLevel];
 
   nodes = level.initialNodes.map(function (n) {
-    return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || false, state: 'idle', refCount: 0 };
+    return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || n.type === 'root', state: 'idle', refCount: 0 };
   });
   edges = level.initialEdges.map(function (e) {
     return { id: e.id, from: e.from, to: e.to };
@@ -729,7 +759,7 @@ function handleLevelChange(value) {
 function resetLevel() {
   var level = LEVELS[currentLevel];
   nodes = level.initialNodes.map(function (n) {
-    return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || false, state: 'idle', refCount: 0 };
+    return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || n.type === 'root', state: 'idle', refCount: 0 };
   });
   edges = level.initialEdges.map(function (e) {
     return { id: e.id, from: e.from, to: e.to };
@@ -888,7 +918,7 @@ async function runReferenceCounting() {
   // 加载沙盒模式
   var level = LEVELS[0];
   nodes = level.initialNodes.map(function (n) {
-    return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || false, state: 'idle', refCount: 0 };
+    return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || n.type === 'root', state: 'idle', refCount: 0 };
   });
   edges = level.initialEdges.map(function (e) {
     return { id: e.id, from: e.from, to: e.to };
