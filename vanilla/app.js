@@ -459,19 +459,25 @@ function generateSandboxJavaCode() {
     if (node.type === 'dom') return 'EventListener';
     if (node.type === 'purple') return 'ThreadLocal';
     if (node.isRoot) return 'GC Root';
-    if (node.size > 100) return 'byte[]';
-    if (node.size > 50) return 'byte[]';
-    if (node.size > 0) return 'byte[]';
+    if (node.size > 0) return 'MemBlock';
     return 'Object';
   }
 
   function getVarName(name) {
-    // 保持原名但首字母小写
-    return name.charAt(0).toLowerCase() + name.slice(1);
+    // 驼峰命名：首字母小写，移除下划线（支持 _A → A, _a → A）
+    var camel = name.replace(/_([a-zA-Z])/g, function (g) { return g[1].toUpperCase(); });
+    return camel.charAt(0).toLowerCase() + camel.slice(1);
   }
 
   // ---- 生成代码 ----
   addLine('public class SandboxMemory {', 'normal');
+  addLine('', 'normal');
+  addLine('    // ======== 内存块包装类 ========', 'normal');
+  addLine('    static class MemBlock {', 'normal');
+  addLine('        byte[] data;', 'normal');
+  addLine('        MemBlock next;', 'normal');
+  addLine('        public MemBlock(int size) { this.data = new byte[size]; }', 'normal');
+  addLine('    }', 'normal');
   addLine('', 'normal');
   addLine('    // ======== 内存对象图 ========', 'normal');
   addLine('    // Root 节点: ' + rootNodes.map(function (r) { return r.name; }).join(', '), 'normal');
@@ -479,6 +485,7 @@ function generateSandboxJavaCode() {
   addLine('', 'normal');
 
   // 1) 从 Root 出发的静态引用
+  var rootRefdIds = {};
   var hasStaticRef = false;
   rootNodes.forEach(function (root) {
     var outgoing = edges.filter(function (e) { return e.from === root.id; });
@@ -488,6 +495,7 @@ function generateSandboxJavaCode() {
         if (nodes[i].id === e.to) { target = nodes[i]; break; }
       }
       if (target && !target.isRoot) {
+        rootRefdIds[target.id] = true;
         hasStaticRef = true;
         addLine('    // GC Root "' + root.name + '" 持有 ' + target.name, 'normal');
         addLine('    private static ' + getTypeName(target) + ' ' + getVarName(target.name) + ';', 'normal');
@@ -514,7 +522,7 @@ function generateSandboxJavaCode() {
     var refCount = incomingEdges.length;
     var typeName = getTypeName(node);
     var varName = getVarName(node.name);
-    var refFromRoot = incomingEdges.some(function (e) {
+    var refFromRoot = rootRefdIds[node.id] || incomingEdges.some(function (e) {
       return rootNodes.some(function (r) { return r.id === e.from; });
     });
 
@@ -527,9 +535,13 @@ function generateSandboxJavaCode() {
     comment += ' | 入边: ' + refCount + ' | 出边: ' + outgoingEdges.length;
     addLine(comment, 'normal');
 
-    // 分配语句
-    if (typeName === 'byte[]' && node.size > 0) {
-      addLine('    ' + typeName + ' ' + varName + ' = new byte[' + node.size + ' * 1024 * 1024];', 'normal');
+    // 分配语句（若已被声明为 static，则直接赋值以避免局部变量遮蔽）
+    if (typeName === 'MemBlock' && node.size > 0) {
+      if (refFromRoot) {
+        addLine('    ' + varName + ' = new MemBlock(' + node.size + ' * 1024 * 1024);', 'normal');
+      } else {
+        addLine('    ' + typeName + ' ' + varName + ' = new MemBlock(' + node.size + ' * 1024 * 1024);', 'normal');
+      }
     } else if (typeName === 'EventListener') {
       addLine('    ' + typeName + ' ' + varName + ' = new EventListener() {', 'normal');
       addLine('        public void onEvent(Object data) {', 'normal');
@@ -551,10 +563,10 @@ function generateSandboxJavaCode() {
       }
       if (target) {
         var tVar = getVarName(target.name);
-        if (typeName === 'byte[]') {
-          addLine('    // ' + varName + ' → ' + target.name + ' (byte[] 持有引用)', 'normal');
+        if (typeName === 'MemBlock') {
+          addLine('    ' + varName + '.next = ' + tVar + '; // 🟢 B 指向 C', 'normal');
         } else {
-          addLine('    ' + varName + '.reference = ' + tVar + ';', 'normal');
+          addLine('    ' + varName + '.next = ' + tVar + ';', 'normal');
         }
       }
     });
