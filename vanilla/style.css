@@ -304,10 +304,27 @@ button:disabled {
   overflow: hidden;
 }
 
+/* ===== 可拖拽分隔条 ===== */
+.resize-handle {
+  width: 5px;
+  min-width: 5px;
+  cursor: col-resize;
+  background-color: #e2e8f0;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+  position: relative;
+  touch-action: none;
+}
+.resize-handle:hover,
+.resize-handle.active {
+  background-color: #94a3b8;
+}
+
 /* ===== 右侧 Java 代码对照面板 ===== */
 .code-panel {
-  width: 380px;
-  min-width: 380px;
+  width: 480px;
+  min-width: 280px;
+  max-width: 60vw;
   background-color: #ffffff;
   border-left: 1px solid #e2e8f0;
   padding: 20px;

@@ -315,6 +315,34 @@ function getNeighbors(nodeId) {
   return edges.filter(function (e) { return e.from === nodeId; }).map(function (e) { return e.to; });
 }
 
+/**
+ * 获取画布容器的居中坐标
+ */
+function getCanvasCenter() {
+  var canvas = document.getElementById('canvas-container');
+  if (!canvas) return { x: 400, y: 250 };
+  var rect = canvas.getBoundingClientRect();
+  return { x: rect.width / 2, y: rect.height / 2 };
+}
+
+/**
+ * 将一组节点平移到画布中心
+ */
+function recenterNodes(nodeArray) {
+  if (!nodeArray || nodeArray.length === 0) return nodeArray;
+  var center = getCanvasCenter();
+  // 计算当前重心
+  var avgX = 0, avgY = 0;
+  nodeArray.forEach(function (n) { avgX += n.x; avgY += n.y; });
+  avgX /= nodeArray.length;
+  avgY /= nodeArray.length;
+  var dx = Math.round(center.x - avgX);
+  var dy = Math.round(center.y - avgY);
+  return nodeArray.map(function (n) {
+    return { id: n.id, name: n.name, type: n.type, x: n.x + dx, y: n.y + dy, size: n.size, isRoot: n.isRoot || n.type === 'root', state: 'idle', refCount: 0 };
+  });
+}
+
 function getLevelData() {
   return LEVELS[currentLevel] || LEVELS[0];
 }
@@ -820,13 +848,14 @@ function updateUI() {
 function addNode() {
   if (isSimulating) return;
   nodeCounter++;
+  var center = getCanvasCenter();
   var newNode = {
     id: 'obj_' + Date.now(),
     name: 'Obj_' + nodeCounter,
     type: 'object',
     isRoot: false,
-    x: 150 + Math.random() * 200,
-    y: 150 + Math.random() * 200,
+    x: center.x + (Math.random() - 0.5) * 220,
+    y: center.y + (Math.random() - 0.5) * 220,
     size: 20 + Math.floor(Math.random() * 60),
     state: 'idle',
     refCount: 0
@@ -916,7 +945,8 @@ function toggleDeleteEdgeMode() {
 }
 
 function clearCanvas() {
-  nodes = [{ id: 'root', name: 'Root', type: 'root', x: 100, y: 250, size: 0, isRoot: true, state: 'idle', refCount: 0 }];
+  var center = getCanvasCenter();
+  nodes = [{ id: 'root', name: 'Root', type: 'root', x: center.x, y: center.y, size: 0, isRoot: true, state: 'idle', refCount: 0 }];
   edges = [];
   linkingMode = false;
   linkingSourceId = null;
@@ -931,12 +961,13 @@ function loadCircularPreset() {
   linkingSourceId = null;
   isDeleteEdgeMode = false;
   deleteEdgeFromId = null;
-  nodes = [
+  var center = getCanvasCenter();
+  nodes = recenterNodes([
     { id: 'root', name: 'Root', type: 'root', x: 100, y: 250, size: 0, isRoot: true, state: 'idle', refCount: 0 },
-    { id: 'node_a', name: 'Obj_A', type: 'object', x: 260, y: 250, size: 30, isRoot: false, state: 'idle', refCount: 0 },
-    { id: 'node_b', name: 'Obj_B', type: 'object', x: 450, y: 150, size: 30, isRoot: false, state: 'idle', refCount: 0 },
-    { id: 'node_c', name: 'Obj_C', type: 'object', x: 450, y: 350, size: 30, isRoot: false, state: 'idle', refCount: 0 },
-  ];
+    { id: 'node_a', name: 'Obj_A', type: 'object', x: 280, y: 250, size: 30, isRoot: false, state: 'idle', refCount: 0 },
+    { id: 'node_b', name: 'Obj_B', type: 'object', x: 480, y: 140, size: 30, isRoot: false, state: 'idle', refCount: 0 },
+    { id: 'node_c', name: 'Obj_C', type: 'object', x: 480, y: 360, size: 30, isRoot: false, state: 'idle', refCount: 0 },
+  ]);
   edges = [
     { id: 'e-r-a', from: 'root', to: 'node_a' },
     { id: 'e-b-c', from: 'node_b', to: 'node_c' },
@@ -1005,9 +1036,9 @@ function handleLevelChange(value) {
   currentLevel = newLevel;
   var level = LEVELS[newLevel];
 
-  nodes = level.initialNodes.map(function (n) {
+  nodes = recenterNodes(level.initialNodes.map(function (n) {
     return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || n.type === 'root', state: 'idle', refCount: 0 };
-  });
+  }));
   edges = level.initialEdges.map(function (e) {
     return { id: e.id, from: e.from, to: e.to };
   });
@@ -1027,9 +1058,9 @@ function handleLevelChange(value) {
 
 function resetLevel() {
   var level = LEVELS[currentLevel];
-  nodes = level.initialNodes.map(function (n) {
+  nodes = recenterNodes(level.initialNodes.map(function (n) {
     return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || n.type === 'root', state: 'idle', refCount: 0 };
-  });
+  }));
   edges = level.initialEdges.map(function (e) {
     return { id: e.id, from: e.from, to: e.to };
   });
@@ -1128,6 +1159,51 @@ function goToNextLevel() {
     document.getElementById('level-select').value = nextLevel;
     handleLevelChange(nextLevel);
   }
+}
+
+// ============================================================
+// 第七.五部分：代码面板可拖拽分隔条
+// ============================================================
+
+function initResizeHandle() {
+  var handle = document.getElementById('resize-handle');
+  var codePanel = document.querySelector('.code-panel');
+  if (!handle || !codePanel) return;
+
+  var isDragging = false;
+
+  function startDrag(e) {
+    isDragging = true;
+    handle.classList.add('active');
+    e.preventDefault();
+  }
+
+  function doDrag(e) {
+    if (!isDragging) return;
+    var clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    if (clientX == null) return;
+    var docWidth = document.documentElement.clientWidth;
+    var newWidth = docWidth - clientX;
+    newWidth = Math.max(280, Math.min(0.6 * docWidth, newWidth));
+    codePanel.style.width = newWidth + 'px';
+    if (typeof renderLines === 'function') renderLines();
+  }
+
+  function stopDrag() {
+    if (isDragging) {
+      isDragging = false;
+      handle.classList.remove('active');
+    }
+  }
+
+  handle.addEventListener('mousedown', startDrag);
+  document.addEventListener('mousemove', doDrag);
+  document.addEventListener('mouseup', stopDrag);
+
+  // 触屏支持
+  handle.addEventListener('touchstart', startDrag);
+  document.addEventListener('touchmove', doDrag);
+  document.addEventListener('touchend', stopDrag);
 }
 
 // ============================================================
@@ -1264,9 +1340,9 @@ async function runReferenceCounting() {
 (function init() {
   // 加载沙盒模式
   var level = LEVELS[0];
-  nodes = level.initialNodes.map(function (n) {
+  nodes = recenterNodes(level.initialNodes.map(function (n) {
     return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, size: n.size, isRoot: n.isRoot || n.type === 'root', state: 'idle', refCount: 0 };
-  });
+  }));
   edges = level.initialEdges.map(function (e) {
     return { id: e.id, from: e.from, to: e.to };
   });
@@ -1275,6 +1351,9 @@ async function runReferenceCounting() {
 
   // 更新下拉框锁定状态
   updateLevelSelectOptions();
+
+  // 初始化代码面板分隔条拖拽
+  initResizeHandle();
 
   render();
 })();
