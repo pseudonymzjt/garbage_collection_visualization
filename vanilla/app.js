@@ -26,12 +26,12 @@ const LEVELS = [
     checkWin: function () { return false; },
   },
 
-  // ---- Level 1: 静态集合膨胀 ----
+  // ---- Level 1: 静态集合 ----
   {
     id: 1,
-    name: '静态集合膨胀',
+    name: '静态集合',
     description: 'static List 属于 GC Root，临时数据被 add 后无法被 JVM 回收',
-    goal: '断开 staticCache → tempData 的连线，运行 Mark-Sweep GC 回收 tempData',
+    goal: '回收 tempData',
     memoryLimit: null,
     initialNodes: [
       { id: 'root', name: 'JVM_Roots', type: 'root', x: 80, y: 250, size: 0, state: 'idle', refCount: 0 },
@@ -58,12 +58,12 @@ const LEVELS = [
     checkWin: function (nodes) { return !nodes.some(function (n) { return n.id === 'tempData'; }); },
   },
 
-  // ---- Level 2: 循环引用的孤岛 ----
+  // ---- Level 2: 循环引用 ----
   {
     id: 2,
-    name: '循环引用的孤岛',
+    name: '循环引用',
     description: '两个孤立对象互相持有引用（b ⇄ c），引用计数无法归零',
-    goal: '限制：只能用引用计数 GC。剪断环路使引用计数降为 0',
+    goal: '清除相互引用对象',
     memoryLimit: null,
     initialNodes: [
       { id: 'root', name: 'JVM_Roots', type: 'root', x: 80, y: 250, size: 0, state: 'idle', refCount: 0 },
@@ -89,12 +89,12 @@ const LEVELS = [
     checkWin: function (nodes) { return !nodes.some(function (n) { return n.id === 'node_b' || n.id === 'node_c'; }); },
   },
 
-  // ---- Level 3: 堆内存强引用解耦 ----
+  // ---- Level 3: 堆内存强引用 ----
   {
     id: 3,
-    name: '堆内存强引用解耦',
-    description: '存在多条冗余强引用指向大 byte[] 缓冲区，内存无法释放',
-    goal: '删除冗余边，使活动内存降至 10MB 以下',
+    name: '堆内存强引用',
+    description: '存在多条冗余强引用指向大缓冲区，内存无法释放',
+    goal: '使活动内存降至 10MB 以下',
     memoryLimit: 10,
     initialNodes: [
       { id: 'root', name: 'Root', type: 'root', x: 60, y: 250, size: 0, state: 'idle', refCount: 0 },
@@ -110,8 +110,11 @@ const LEVELS = [
       { text: 'public class DataHandler {', alwaysNormal: true },
       { text: '    private byte[] bigBuffer = new byte[150 * 1024 * 1024];', alwaysNormal: true },
       { text: '', alwaysNormal: true },
-      { text: '    // 冗余直接引用 (Root \u2192 bigBuffer)', alwaysNormal: true },
-      { text: '    // 需断开此冗余链路', activeEdge: 'e-root-buf', commentText: '    // 冗余直接引用已断开' },
+      { text: '    public byte[] getBigBuffer() { return bigBuffer; }', alwaysNormal: true },
+      { text: '}', alwaysNormal: true },
+      { text: '', alwaysNormal: true },
+      { text: '// 某处业务代码不小心将 handler.getBigBuffer()', alwaysNormal: true },
+      { text: '// 赋值给了长生命周期的全局变量，导致 Root → bigBuffer 冗余链路', activeEdge: 'e-root-buf', commentText: '    // 冗余链路已断开' },
       { text: '', alwaysNormal: true },
       { text: '    public void clear() {', alwaysNormal: true },
       { text: '        // 切断核心引用 (HeavyComp → bigBuffer)', alwaysNormal: true },
@@ -130,7 +133,7 @@ const LEVELS = [
     id: 4,
     name: '监听器未注销',
     description: '全局 EventPublisher 保留对短生命周期组件的监听器引用',
-    goal: '斩断 EventPublisher → Listener 的连线，运行 GC 清除',
+    goal: '清除监听器组件',
     memoryLimit: null,
     initialNodes: [
       { id: 'root', name: 'JVM_Roots', type: 'root', x: 50, y: 250, size: 0, state: 'idle', refCount: 0 },
@@ -144,18 +147,23 @@ const LEVELS = [
       { id: 'e-listener-comp', from: 'listener', to: 'heavyComp' },
     ],
     javaCode: [
-      { text: '// 短生命周期组件，持有 80MB 大对象', alwaysNormal: true },
-      { text: 'public class HeavyComponent implements Listener {', alwaysNormal: true },
+      { text: '// 80MB 大对象组件', alwaysNormal: true },
+      { text: 'public class HeavyComponent {', alwaysNormal: true },
       { text: '    private byte[] data = new byte[80 * 1024 * 1024];', alwaysNormal: true },
       { text: '', alwaysNormal: true },
-      { text: '    public HeavyComponent() {', alwaysNormal: true },
-      { text: '        // 向全局事件源注册（连线 e-pub-listener）', activeEdge: 'e-pub-listener', commentText: '        // 向全局事件源注册 已解绑' },
-      { text: '        EventPublisher.register(this); // 泄漏源', activeEdge: 'e-pub-listener', commentText: '        // EventPublisher.register(this); // 已修复' },
+      { text: '    private Listener listener = new Listener() { // 2MB', alwaysNormal: true },
+      { text: '        // 匿名内部类 ⟹ 隐式持有外部类引用', alwaysNormal: true },
+      { text: '        // 对应图中的 Listener ──→ HeavyComp', alwaysNormal: true },
+      { text: '    };', alwaysNormal: true },
+      { text: '', alwaysNormal: true },
+      { text: '    public void start() {', alwaysNormal: true },
+      { text: '        // 向全局事件源注册（图中 e-pub-listener 连线）', activeEdge: 'e-pub-listener', commentText: '        // 已解绑（连线已断）' },
+      { text: '        EventPublisher.register(listener); // 泄漏源', activeEdge: 'e-pub-listener', commentText: '        // EventPublisher.register(listener); // 已修复' },
       { text: '    }', alwaysNormal: true },
       { text: '', alwaysNormal: true },
-      { text: '    public void onDestroy() {', alwaysNormal: true },
-      { text: '        // 忘记注销监听器！', activeEdge: 'e-pub-listener', commentText: '        // 已取消注册' },
-      { text: '        // EventPublisher.unregister(this);', activeEdge: 'e-pub-listener', commentText: '        EventPublisher.unregister(this); // 已注销' },
+      { text: '    public void destroy() {', alwaysNormal: true },
+      { text: '        // 忘记取消注册！Listener 仍被 EventPublisher 持有', activeEdge: 'e-pub-listener', commentText: '        // 已取消注册' },
+      { text: '        // EventPublisher.unregister(listener);', activeEdge: 'e-pub-listener', commentText: '        EventPublisher.unregister(listener); // 已注销' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
@@ -171,7 +179,7 @@ const LEVELS = [
     id: 5,
     name: 'ThreadLocal 遗留',
     description: '线程池复用线程但未调用 ThreadLocal.remove()，大对象残留',
-    goal: '切断 ThreadLocalMap → UserContext 的边，清理 ThreadLocal',
+    goal: '清理线程局部变量',
     memoryLimit: null,
     initialNodes: [
       { id: 'thread', name: 'Thread', type: 'root', x: 70, y: 250, size: 0, state: 'idle', refCount: 0 },
@@ -205,7 +213,7 @@ const LEVELS = [
     id: 6,
     name: '未取消的后台 Timer',
     description: 'java.util.Timer 线程未调用 cancel()，持有外部类无法被 GC',
-    goal: '清除 Timer 紫色节点与 JVM_Roots 的连接，运行 GC',
+    goal: '清除TimerTask对象',
     memoryLimit: null,
     initialNodes: [
       { id: 'root', name: 'JVM_Roots', type: 'root', x: 60, y: 250, size: 0, state: 'idle', refCount: 0 },
@@ -288,9 +296,9 @@ function updateLevelSelectOptions() {
   var options = select.querySelectorAll('option');
   var levelNames = [
     '沙盒模式',
-    'L1: 静态集合膨胀',
-    'L2: 循环引用的孤岛',
-    'L3: 堆内存强引用解耦',
+    'L1: 静态集合',
+    'L2: 循环引用',
+    'L3: 堆内存强引用',
     'L4: 监听器未注销',
     'L5: ThreadLocal 遗留',
     'L6: 未取消的后台 Timer'
@@ -356,6 +364,7 @@ function getActiveMemory() {
 // ============================================================
 
 function render() {
+  updateRefCounts();
   renderNodes();
   renderLines();
   renderCodePanel();
@@ -1137,11 +1146,14 @@ function showCongratsOverlay() {
   document.getElementById('completed-level-label').textContent = getLevelData().name;
 
   var nextBtn = document.getElementById('btn-next-level');
+  var congratsMessage = document.querySelector('.congrats-message');
   if (currentLevel < 6) {
     nextBtn.style.display = 'inline-block';
     nextBtn.textContent = '下一关';
+    congratsMessage.textContent = 'Java 源码已成功重构！';
   } else {
     nextBtn.style.display = 'none';
+    congratsMessage.textContent = '🎉 恭喜你完成了全部 6 个关卡！\n你已经掌握了 Java 中最经典的 6 种内存泄漏场景及其修复方法。';
   }
 
   overlay.style.display = 'flex';
@@ -1331,6 +1343,74 @@ async function runReferenceCounting() {
 
   // 通关检测
   checkWinCondition();
+}
+
+// ============================================================
+// 第八.五部分：攻略指南弹窗
+// ============================================================
+
+var currentGuideTab = 0;
+
+function showGameGuide() {
+  var overlay = document.getElementById('guide-overlay');
+  if (!overlay) return;
+  // 默认选择当前关卡的攻略
+  var tabIndex = currentLevel > 0 ? currentLevel : 0;
+  switchGuideTab(tabIndex);
+  overlay.style.display = 'flex';
+}
+
+function closeGameGuide() {
+  var overlay = document.getElementById('guide-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// ESC 键关闭弹窗
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    closeGameGuide();
+    closeCongratsOverlay();
+  }
+});
+
+// 点击遮罩层关闭弹窗
+document.addEventListener('click', function (e) {
+  var guideOverlay = document.getElementById('guide-overlay');
+  if (guideOverlay && guideOverlay.style.display === 'flex') {
+    if (e.target === guideOverlay) {
+      closeGameGuide();
+    }
+  }
+  var congratsOverlay = document.getElementById('congrats-overlay');
+  if (congratsOverlay && congratsOverlay.style.display === 'flex') {
+    if (e.target === congratsOverlay) {
+      closeCongratsOverlay();
+    }
+  }
+});
+
+function switchGuideTab(index) {
+  currentGuideTab = index;
+
+  // 切换 tab 按钮
+  var tabs = document.querySelectorAll('.guide-tab');
+  tabs.forEach(function (tab, i) {
+    if (i === index) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  // 切换面板
+  var panels = document.querySelectorAll('.guide-panel');
+  panels.forEach(function (panel, i) {
+    if (i === index) {
+      panel.classList.add('active');
+    } else {
+      panel.classList.remove('active');
+    }
+  });
 }
 
 // ============================================================

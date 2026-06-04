@@ -84,8 +84,8 @@ npm run dev
 
 ### 步骤三：Java 关卡挑战（6 大经典内存泄漏场景）
 1. 在左侧 **关卡选择** 下拉菜单中，选择 L1 ~ L6 中的任一关卡。
-2. 根据右侧 **Java 代码对照区** 的提示，分析泄漏原因。
-3. 在画布中通过 **连线模式 / 删除连线模式** 编辑引用关系。
+2. 观察画布中的内存拓扑图与右侧 **Java 代码对照区**，分析泄漏的根源。
+3. 利用画布工具编辑引用关系，打破泄漏链路。
 4. 运行对应 GC 算法，观察内存是否被成功回收。
 5. 通关后，右侧代码区会自动高亮修复后的代码，并显示通关徽章。
 
@@ -101,6 +101,99 @@ npm run dev
 | L4 | 监听器未注销 | 全局 EventPublisher 持有监听器 | 斩断 `EventPublisher -> Listener` |
 | L5 | ThreadLocal 遗留 | 线程复用但未调用 `remove()` | 切断 `ThreadLocalMap -> UserContext` |
 | L6 | 未取消的后台 Timer | Timer 线程未调用 `cancel()` | 清除 Timer 与 JVM_Roots 的连接 |
+
+---
+
+## 📖 完整通关攻略
+
+### 通用提示
+
+- **右侧 Java 代码面板**会实时反映您的操作：黄色高亮行 = 泄漏代码（连线未断），红色删除线 = 已修复代码（连线已断）。
+- **GC 算法选择**：大部分关卡两种 GC 均可通关；但 **L2 强制使用引用计数**（Mark-Sweep 按钮被禁用）以演示其缺陷。
+- **重置关卡**：随时可点击「重置本关卡」恢复初始状态。
+- **攻略指南**：点击左侧面板的 **「📖 攻略指南」** 按钮可随时查看当前关卡的背景分析与考点说明。
+
+---
+
+### L1：静态集合膨胀 — 通关详解
+
+**背景**：`CacheManager` 类中的 `static List<Object> cache` 属于 GC Root。每次调用 `process()` 时创建 100MB 的临时数据并执行 `cache.add(tempData)`。由于 `cache` 是静态变量，即使 `process()` 方法执行完毕，这条从 GC Root 到 `tempData` 的引用链路依然存活——标记-清除算法从 `JVM_Roots` 向下遍历时，会经过 `staticCache` 将 `tempData` 标记为"存活"。短期数据被永久保留，这是静态集合内存泄漏的本质。
+
+**右侧 Java 代码变化**：
+```java
+// 连线存在时（高亮黄色）：
+cache.add(tempData);  // ← 泄漏代码
+
+// 连线切断后（红色删除线）：
+// cache.add(tempData); // 已解绑
+```
+
+**学术考点**：static 变量属于 GC Root，其引用的对象永远不会被回收，除非手动置 null 或清除集合。
+
+---
+
+### L2：循环引用的孤岛 — 通关详解
+
+**背景**：两个孤立 `Node` 对象 b 和 c 互相引用（`b.next = c; c.next = b`）。没有任何 GC Root 指向它们，但每个对象的引用计数均为 1。引用计数算法只关心"有多少个引用指向我"，而不关心这些引用是否来自活对象——环路导致计数永远无法归零。这正是引用计数算法的根本缺陷，也是 JVM 选择可达性分析（而非引用计数）作为核心 GC 算法的原因。
+
+**关键理解**：引用计数算法无法检测循环引用——这是 JVM 选择可达性分析（而非引用计数）作为核心 GC 算法的根本原因。
+
+---
+
+### L3：堆内存强引用解耦 — 通关详解
+
+**背景**：一个 150MB 的 `byte[]` 缓冲区 `bigBuffer` 同时被两条强引用路径指向：
+- `Root → HeavyComp → bigBuffer`（核心链路）
+- `Root → bigBuffer`（冗余链路）
+
+在 JVM 的可达性分析中，只要存在**任意一条**从 GC Root 到对象的强引用路径，该对象就不会被回收。这意味着必须断开**所有**路径，`bigBuffer` 才会被标记为不可达。多条冗余强引用常常出现在缓存设计不当、对象引用未置空等场景中，排查时需要逐条追溯所有引用链路。
+
+**右侧 Java 代码变化**：`this.bigBuffer = null;` 高亮显示。
+
+---
+
+### L4：监听器未注销 — 通关详解
+
+**背景**：`HeavyComponent`（80MB）包含一个匿名内部类实现的 `Listener` 对象（2MB）。该匿名内部类**隐式持有外部类 `HeavyComponent.this` 的引用**（图中 `Listener → HeavyComp` 边）。在 `start()` 中向全局 `EventPublisher` 注册了这个监听器。当组件需要销毁时，由于忘记调用 `EventPublisher.unregister(listener)`，`EventPublisher` 仍然持有 `Listener` 的引用，而 `Listener` 又通过隐式引用持有 `HeavyComponent`，导致整个 80MB 的对象子树残留在堆中。
+
+**右侧 Java 代码变化**：
+```java
+// 修复前（高亮）：
+EventPublisher.register(this); // 泄漏源
+
+// 修复后（红色删除线）：
+EventPublisher.unregister(this); // 已注销
+```
+
+---
+
+### L5：ThreadLocal 遗留 — 通关详解
+
+**背景**：Web 服务器使用线程池处理请求。`WebFilter.doFilter()` 使用 `ThreadLocal` 存储 80MB 的 `Context` 对象，但在 `finally` 块中忘记调用 `remove()`。线程执行完毕后返回线程池，但 `ThreadLocalMap` 中的 `Entry` 仍然持有 `UserContext` 的强引用。由于线程池中的线程长期存活不销毁，这些残留对象就变成了"永久泄漏"——每个请求都在线程本地积累大对象，最终撑满堆内存。这正是 ThreadLocal 的典型误用模式。
+
+**右侧 Java 代码变化**：
+```java
+// 修复前（高亮）：
+// holder.remove();  ← 被注释，忘记清理
+
+// 修复后（红色删除线变为绿色清理代码）：
+holder.remove(); // ThreadLocal 已清理
+```
+
+---
+
+### L6：未取消的后台 Timer — 通关详解
+
+**背景**：`Service` 类启动了一个 `java.util.Timer` 后台线程，定时执行 `HeavyTask`（60MB）。`java.util.Timer` 的构造函数会创建一条后台守护线程，该线程持有传入的 `TimerTask` 对象引用。只要没有调用 `timer.cancel()`，Timer 线程就会一直存活，导致 `Timer → TimerTask → HeavyComp(60MB)` 这整条引用链中的对象都无法被 GC 回收。即使 `Service` 对象早已不再使用，Timer 线程仍然像"僵尸线程"一样持有整个引用链。这是后台定时任务未正确清理的典型案例。
+
+**右侧 Java 代码变化**：
+```java
+// 修复前（高亮）：
+// timer.cancel();  ← 被注释，未取消
+
+// 修复后（红色删除线变为清理代码）：
+timer.cancel(); // 已取消
+```
 
 ---
 

@@ -174,6 +174,7 @@ body {
   color: #64748b;
   font-size: 14px;
   margin: 0 0 24px 0;
+  white-space: pre-line;
 }
 
 .congrats-stats {
@@ -554,6 +555,166 @@ button:disabled {
   color: #fff;
   text-align: center;
   transition: background-color 0.3s;
+}
+
+/* ===== 攻略指南弹窗 ===== */
+.guide-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.guide-modal {
+  background-color: #ffffff;
+  border-radius: 14px;
+  width: 90%;
+  max-width: 720px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.guide-header h2 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #0f172a;
+  margin: 0;
+}
+
+.guide-close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+}
+.guide-close-btn:hover {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.guide-content {
+  padding: 20px 24px 24px 24px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.guide-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.guide-tab {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #64748b;
+}
+
+.guide-tab:hover {
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.guide-tab.active {
+  background-color: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.guide-panel {
+  display: none;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.guide-panel.active {
+  display: block;
+}
+
+.guide-panel h3 {
+  font-size: 16px;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+  font-weight: bold;
+}
+
+.guide-panel p {
+  margin: 0 0 10px 0;
+}
+
+.guide-panel ul, .guide-panel ol {
+  margin: 8px 0 12px 0;
+  padding-left: 20px;
+}
+
+.guide-panel li {
+  margin-bottom: 6px;
+}
+
+.guide-panel code {
+  background-color: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', Consolas, monospace;
+  font-size: 13px;
+  color: #c2410c;
+}
+
+.guide-panel .legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* 攻略指南按钮 */
+#btn-guide {
+  background-color: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  font-size: 13px;
+  padding: 10px 15px;
+  transition: all 0.15s;
+}
+#btn-guide:hover {
+  background-color: #e0f2fe;
+  border-color: #38bdf8;
 }
 
 /* L4 卸下组件按钮 — 克制的危险按钮 */
