@@ -49,15 +49,15 @@
       <!-- 关卡操作按钮（仅关卡模式下显示） -->
       <div id="level-action-buttons" class="btn-group" style="display: none;">
         <h3>🎮 关卡操作</h3>
-        <button id="btn-dismantle" onclick="dismantleComponent()" style="background-color: #ef4444; display: none;">🗑️ 卸下组件</button>
+        <button id="btn-dismantle" onclick="dismantleComponent()" style="display: none;">🗑️ 卸下组件</button>
       </div>
 
       <!-- GC 运行按钮 -->
       <div class="btn-group">
         <h3>⚡ 垃圾回收</h3>
-        <button id="btn-ms" onclick="runMarkSweep()" style="background-color: #eab308;">⚡ 标记-清除 (Mark-Sweep)</button>
-        <button id="btn-rc" onclick="runReferenceCounting()" style="background-color: #f97316;">🔄 引用计数 (RC)</button>
-        <button id="btn-circular" onclick="loadCircularPreset()" style="background-color: #8b5cf6;">🌀 加载：循环引用缺陷场景</button>
+        <button id="btn-ms" onclick="runMarkSweep()">⚡ 标记-清除 (Mark-Sweep)</button>
+        <button id="btn-rc" onclick="runReferenceCounting()">🔄 引用计数 (RC)</button>
+        <button id="btn-circular" onclick="loadCircularPreset()">🌀 加载：循环引用缺陷场景</button>
       </div>
 
       <!-- 模式指示器 -->
@@ -75,10 +75,10 @@
       <!-- SVG 连线层 -->
       <svg id="svg-canvas" style="position: absolute; width: 100%; height: 100%; pointer-events: none;">
         <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="60" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" />
+          <marker id="arrow" viewBox="0 0 10 10" refX="60" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
           </marker>
-          <marker id="arrow-highlight" viewBox="0 0 10 10" refX="60" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <marker id="arrow-highlight" viewBox="0 0 10 10" refX="60" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#eab308" />
           </marker>
         </defs>
@@ -97,12 +97,12 @@
       </code></pre>
       <!-- 图例说明 -->
       <div class="code-legend">
-        <div><span class="legend-dot" style="color: #fbbf24;">🟡</span> 高亮 = 泄漏代码（连线未断）</div>
-        <div><span class="legend-dot" style="color: #4b5563; text-decoration: line-through;">⚪</span> 注释 = 已修复（连线已断）</div>
-        <div><span class="legend-dot" style="color: #10b981;">🟢</span> 绿色 = GC Root</div>
+        <div><span class="legend-dot" style="color: #eab308;">🟡</span> 高亮 = 泄漏代码（连线未断）</div>
+        <div><span class="legend-dot" style="color: #ef4444;">🔴</span> 删除线 = 已修复（连线已断）</div>
+        <div><span class="legend-dot" style="color: #059669;">🟢</span> 绿色 = GC Root</div>
         <div><span class="legend-dot" style="color: #f97316;">🟠</span> 橙色 = 事件源</div>
         <div><span class="legend-dot" style="color: #8b5cf6;">🟣</span> 紫色 = JVM 内部</div>
-        <div><span class="legend-dot" style="color: #475569;">⚫</span> 灰色 = 普通对象</div>
+        <div><span class="legend-dot" style="color: #64748b;">⚪</span> 灰色 = 普通对象</div>
       </div>
     </div>
   </div>

@@ -374,8 +374,8 @@ function renderLines() {
     line.setAttribute("y2", target.y);
 
     var isHighlighted = source.state === 'marked';
-    line.setAttribute("stroke", isHighlighted ? '#eab308' : '#334155');
-    line.setAttribute("stroke-width", isHighlighted ? '3' : '2');
+    line.setAttribute("stroke", isHighlighted ? '#eab308' : '#94a3b8');
+    line.setAttribute("stroke-width", isHighlighted ? '2.5' : '1.5');
     line.setAttribute("marker-end", isHighlighted ? 'url(#arrow-highlight)' : 'url(#arrow)');
 
     svg.appendChild(line);
@@ -389,7 +389,7 @@ function renderCodePanel() {
 
   if (levelData.javaCode.length === 0) {
     codeArea.innerHTML =
-      '<div style="color: #4b5563; font-size: 13px; text-align: center; padding: 40px 20px;">' +
+      '<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 40px 20px;">' +
       '<p style="margin: 0 0 8px 0; font-size: 24px;">🛝</p>' +
       '<p style="margin: 0;">沙盒模式 — 暂无 Java 代码对照</p>' +
       '<p style="margin: 6px 0 0 0; font-size: 11px;">选择一个关卡查看对应的泄漏场景源码</p>' +
@@ -480,20 +480,28 @@ function updateUI() {
   var linkBtn = document.getElementById('btn-link');
   if (linkingMode) {
     linkBtn.textContent = '❌ 退出连线模式';
-    linkBtn.style.backgroundColor = '#ef4444';
+    linkBtn.style.backgroundColor = '';
+    linkBtn.style.color = '#ef4444';
+    linkBtn.style.borderColor = '#ef4444';
   } else {
     linkBtn.textContent = '🔗 连线模式';
     linkBtn.style.backgroundColor = '';
+    linkBtn.style.color = '';
+    linkBtn.style.borderColor = '';
   }
 
   // 删除连线按钮文字
   var delBtn = document.getElementById('btn-delete-edge');
   if (isDeleteEdgeMode) {
     delBtn.textContent = '❌ 退出删除连线';
-    delBtn.style.backgroundColor = '#ef4444';
+    delBtn.style.backgroundColor = '';
+    delBtn.style.color = '#ef4444';
+    delBtn.style.borderColor = '#ef4444';
   } else {
     delBtn.textContent = '🗑️ 删除连线';
     delBtn.style.backgroundColor = '';
+    delBtn.style.color = '';
+    delBtn.style.borderColor = '';
   }
 
   // ---- 关卡级别按钮禁用 ----
@@ -525,32 +533,32 @@ function updateUI() {
   var indicator = document.getElementById('mode-indicator');
   var levelData = getLevelData();
 
-  var bgColor = '#1e293b';
+  var bgColor = '#0f172a';
   var text = '';
 
   if (isSimulating) {
-    bgColor = '#f97316';
+    bgColor = '#c2410c';
     text = '⏳ 模拟运行中...';
   } else if (linkingMode) {
-    bgColor = '#3b82f6';
+    bgColor = '#1d4ed8';
     text = '🔗 连线模式 — 点击两个节点建立引用';
   } else if (isDeleteEdgeMode) {
-    bgColor = '#ef4444';
+    bgColor = '#dc2626';
     text = '🗑️ 删除连线模式 — 依次点击两节点';
   } else if (currentLevel === 2) {
-    bgColor = '#f97316';
+    bgColor = '#c2410c';
     text = '🔒 关卡 2 限制：仅可使用引用计数 (RC) 回收';
   } else if (currentLevel > 0) {
-    bgColor = '#1e293b';
+    bgColor = '#0f172a';
     text = '🎮 ' + levelData.name + ' — 按目标操作';
   } else {
-    bgColor = '#1e293b';
+    bgColor = '#0f172a';
     text = '🖱️ 沙盒模式 — 自由编辑';
   }
 
   indicator.textContent = text;
   indicator.style.backgroundColor = bgColor;
-  indicator.style.border = (isSimulating || linkingMode || isDeleteEdgeMode || currentLevel === 2) ? '1px solid transparent' : '1px solid #334155';
+  indicator.style.border = (isSimulating || linkingMode || isDeleteEdgeMode || currentLevel === 2) ? '1px solid transparent' : '1px solid #e2e8f0';
 
   // 通关徽章
   var badge = document.getElementById('level-completed-badge');
@@ -570,7 +578,7 @@ function updateUI() {
 
   if (currentLevel > 0) {
     actionArea.innerHTML =
-      '<button onclick="resetLevel()" style="background-color: #6b7280; width: 100%;">🔄 重置本关卡</button>';
+      '<button onclick="resetLevel()" style="width: 100%;">🔄 重置本关卡</button>';
 
     // 关卡专属提示
     var levelHints = [
@@ -818,11 +826,11 @@ function dismantleComponent() {
     // 组件已被卸下，但仍需切断 Listener 注册
     if (listenerEdgeExists) {
       hintArea.innerHTML = '⚠️ HeavyComponent 已卸下！但 Listener 仍注册在 EventPublisher 上，请切断 e-pub-listener 连线！';
-      hintArea.style.color = '#f97316';
+      hintArea.style.color = '#c2410c';
       hintArea.style.border = '1px solid #f97316';
     } else {
       hintArea.innerHTML = '✅ 所有引用已切断，泄漏已修复！运行 GC 确认。';
-      hintArea.style.color = '#10b981';
+      hintArea.style.color = '#059669';
       hintArea.style.border = '1px solid #10b981';
     }
     return;
@@ -836,11 +844,11 @@ function dismantleComponent() {
 
   if (listenerEdgeExists) {
     hintArea.innerHTML = '⚠️ 组件已卸下，但 EventPublisher 仍持有 Listener 引用！请切断 e-pub-listener 连线后运行 GC';
-    hintArea.style.color = '#f97316';
+    hintArea.style.color = '#c2410c';
     hintArea.style.border = '1px solid #f97316';
   } else {
     hintArea.innerHTML = '✅ Listener 已注销，所有引用已清除！运行 GC 释放内存吧';
-    hintArea.style.color = '#10b981';
+    hintArea.style.color = '#059669';
     hintArea.style.border = '1px solid #10b981';
     checkWinCondition();
   }

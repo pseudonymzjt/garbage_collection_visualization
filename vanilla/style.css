@@ -7,8 +7,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #f8fafc;
+  color: #334155;
   height: 100vh;
   overflow: hidden;
 }
@@ -24,8 +24,8 @@ body {
 .control-panel {
   width: 320px;
   min-width: 320px;
-  background-color: #1e293b;
-  border-right: 1px solid #334155;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -36,9 +36,10 @@ body {
 .panel-title {
   font-size: 1.25rem;
   font-weight: bold;
-  border-bottom: 2px solid #3b82f6;
+  border-bottom: 2px solid #1e40af;
   padding-bottom: 10px;
   margin: 0;
+  color: #1e293b;
 }
 
 /* 关卡选择器 */
@@ -50,37 +51,38 @@ body {
 
 .level-selector label {
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
   font-weight: 600;
 }
 
 .level-selector select {
-  background-color: #0f172a;
-  color: #f8fafc;
-  border: 1px solid #475569;
+  background-color: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 14px;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .level-selector select:hover,
 .level-selector select:focus {
   border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .level-selector select option {
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #ffffff;
+  color: #1e293b;
   padding: 8px;
 }
 
 /* 关卡信息展示 */
 .level-info {
-  background-color: #0f172a;
-  border: 1px solid #334155;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 12px 14px;
 }
@@ -88,26 +90,26 @@ body {
 .level-info h3 {
   margin: 0 0 8px 0;
   font-size: 15px;
-  color: #fbbf24;
+  color: #92400e;
 }
 
 .level-info .level-description {
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
   margin: 0 0 8px 0;
   line-height: 1.5;
 }
 
 .level-info .level-goal {
   font-size: 13px;
-  color: #60a5fa;
+  color: #1d4ed8;
   margin: 0;
   font-weight: 500;
 }
 
 .level-info .level-memory {
   font-size: 13px;
-  color: #f97316;
+  color: #c2410c;
   margin: 6px 0 0 0;
   font-weight: 500;
 }
@@ -115,30 +117,30 @@ body {
 /* 内存指示器 */
 .memory-indicator {
   font-size: 12px;
-  color: #94a3b8;
+  color: #64748b;
   padding: 6px 10px;
-  background-color: #0f172a;
+  background-color: #ffffff;
   border-radius: 6px;
-  border: 1px solid #334155;
+  border: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
 }
 
 .memory-indicator .memory-value {
-  color: #f97316;
+  color: #c2410c;
   font-weight: bold;
 }
 
 .memory-indicator .memory-limit {
-  color: #60a5fa;
+  color: #3b82f6;
 }
 
 .memory-indicator .memory-value.within-limit {
-  color: #10b981;
+  color: #059669;
 }
 
-/* 通关状态 */
+/* 通关状态 - 扁平 */
 .level-completed-badge {
   background-color: #059669;
   color: white;
@@ -147,12 +149,6 @@ body {
   text-align: center;
   font-weight: bold;
   font-size: 14px;
-  animation: pulse-glow 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(5, 150, 105, 0.3); }
-  50% { box-shadow: 0 0 15px rgba(5, 150, 105, 0.6); }
 }
 
 .btn-group {
@@ -164,35 +160,51 @@ body {
 .btn-group h3 {
   margin: 0;
   font-size: 14px;
-  color: #94a3b8;
+  color: #64748b;
 }
 
+/* ---- 统一扁平按钮 ---- */
 button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
   padding: 10px 15px;
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s, border-color 0.15s;
   font-size: 13px;
 }
 
 button:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
 }
 
 button:disabled {
-  background-color: #475569;
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
   cursor: not-allowed;
+}
+
+/* 核心主按钮：GC 按钮采用克制的深色 */
+#btn-ms, #btn-rc {
+  background-color: #0f172a;
+  color: #ffffff;
+  border: none;
+}
+#btn-ms:hover:not(:disabled), #btn-rc:hover:not(:disabled) {
+  background-color: #1e293b;
 }
 
 /* ===== 中间画布区域 ===== */
 .canvas-container {
   flex-grow: 1;
   position: relative;
-  background-color: #0b0f19;
+  background-color: #f8fafc;
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 16px 16px;
   overflow: hidden;
 }
 
@@ -200,8 +212,8 @@ button:disabled {
 .code-panel {
   width: 380px;
   min-width: 380px;
-  background-color: #111827;
-  border-left: 1px solid #374151;
+  background-color: #ffffff;
+  border-left: 1px solid #e2e8f0;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -212,10 +224,10 @@ button:disabled {
 .code-panel h3 {
   font-size: 15px;
   font-weight: bold;
-  color: #fbbf24;
+  color: #92400e;
   margin: 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -223,7 +235,7 @@ button:disabled {
 
 .code-panel h3 .code-lang-badge {
   font-size: 11px;
-  background-color: #3b82f6;
+  background-color: #1e40af;
   color: white;
   padding: 2px 8px;
   border-radius: 4px;
@@ -231,14 +243,14 @@ button:disabled {
 }
 
 .code-panel pre {
-  background-color: #030712;
+  background-color: #f8fafc;
   padding: 16px;
   border-radius: 8px;
   font-family: 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.7;
   overflow-x: auto;
-  border: 1px solid #1f2937;
+  border: 1px solid #e2e8f0;
   margin: 0;
   min-height: 100px;
   flex-grow: 1;
@@ -250,46 +262,46 @@ button:disabled {
 
 /* 代码行基础样式 */
 .code-line {
-  color: #9ca3af;
+  color: #64748b;
   white-space: pre;
   display: block;
   padding: 1px 0;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   border-left: 3px solid transparent;
   padding-left: 8px;
 }
 
-/* 活跃行（高亮泄漏代码） */
+/* 活跃行（泄漏代码）— 类似 Git diff 新增行 */
 .code-line.active {
-  color: #fbbf24;
-  background-color: rgba(251, 191, 36, 0.08);
-  border-left: 3px solid #fbbf24;
+  color: #1e293b;
+  background-color: rgba(234, 179, 8, 0.07);
+  border-left: 3px solid #eab308;
 }
 
-/* 注释行（已修复代码） */
+/* 注释行（已修复）— 类似 Git diff 删除行 */
 .code-line.comment {
-  color: #4b5563;
+  color: #94a3b8;
+  background-color: rgba(239, 68, 68, 0.06);
+  border-left: 3px solid #ef4444;
   font-style: italic;
-  text-decoration: line-through;
 }
 
 /* 代码行编号 */
 .code-line-number {
   display: inline-block;
   width: 24px;
-  color: #4b5563;
+  color: #94a3b8;
   user-select: none;
   text-align: right;
   margin-right: 12px;
   font-style: normal;
-  text-decoration: none;
 }
 
 /* 代码图例 */
 .code-legend {
   font-size: 11px;
-  color: #4b5563;
-  border-top: 1px solid #1f2937;
+  color: #94a3b8;
+  border-top: 1px solid #e2e8f0;
   padding-top: 10px;
   display: flex;
   flex-direction: column;
@@ -307,19 +319,19 @@ button:disabled {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #475569;
-  color: white;
+  background-color: #e2e8f0;
+  color: #334155;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 3px solid #64748b;
+  border: 3px solid #cbd5e1;
   transform: translate(-50%, -50%);
   cursor: grab;
   user-select: none;
   font-weight: bold;
   font-size: 11px;
-  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
+  transition: background-color 0.3s, border-color 0.3s, opacity 0.3s, transform 0.3s;
   z-index: 1;
 }
 
@@ -327,25 +339,25 @@ button:disabled {
   cursor: grabbing;
 }
 
-/* 🟢 根节点 */
+/* 🟢 根节点 — 柔和的莫兰迪绿 */
 .node.root-node {
-  background-color: #10b981;
-  border-color: #059669;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+  background-color: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
 }
 
-/* 🟠 事件源/发布者 */
+/* 🟠 事件源/发布者 — 柔和橙 */
 .node.dom-node {
-  background-color: #f97316;
-  border-color: #ea580c;
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.3);
+  background-color: #ffedd5;
+  border-color: #f97316;
+  color: #9a3412;
 }
 
-/* 🟣 JVM 内部对象 */
+/* 🟣 JVM 内部对象 — 柔和紫 */
 .node.purple-node {
-  background-color: #8b5cf6;
-  border-color: #7c3aed;
-  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+  background-color: #ede9fe;
+  border-color: #8b5cf6;
+  color: #5b21b6;
 }
 
 /* 内存大小圆标 */
@@ -353,9 +365,9 @@ button:disabled {
   position: absolute;
   bottom: -8px;
   right: -8px;
-  background-color: #1e293b;
-  border: 1px solid #475569;
-  color: #94a3b8;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
   font-size: 9px;
   border-radius: 8px;
   padding: 1px 5px;
@@ -365,20 +377,20 @@ button:disabled {
 /* 连线模式下被选中的源节点 */
 .node.linking-source {
   border-color: #3b82f6 !important;
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.6) !important;
+  background-color: #dbeafe !important;
 }
 
 /* 删除连线模式下被选中的源节点 */
 .node.delete-target {
   border-color: #ef4444 !important;
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.6) !important;
+  background-color: #fef2f2 !important;
 }
 
-/* 标记阶段高亮 */
+/* 标记阶段高亮 — 柔和黄 */
 .node.marked-node {
-  background-color: #eab308 !important;
-  border-color: #ca8a04 !important;
-  box-shadow: 0 0 18px rgba(234, 179, 8, 0.7) !important;
+  background-color: #fef9c3 !important;
+  border-color: #eab308 !important;
+  color: #854d0e !important;
   z-index: 2;
 }
 
@@ -390,28 +402,30 @@ button:disabled {
   z-index: 0;
 }
 
-/* 引用计数角标 */
+/* 引用计数角标 — 浅灰标签代替红色 */
 .ref-count-badge {
   position: absolute;
   top: -10px;
   right: -8px;
-  background-color: #ef4444;
-  color: white;
+  background-color: #f1f5f9;
+  color: #475569;
   font-size: 10px;
-  border-radius: 10px;
-  padding: 2px 6px;
-  font-weight: bold;
-  line-height: 1;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 /* 沙盒模式提示 */
 .sandbox-hint {
   font-size: 12px;
-  color: #64748b;
+  color: #94a3b8;
   text-align: center;
   padding: 8px;
-  border: 1px dashed #334155;
+  border: 1px dashed #cbd5e1;
   border-radius: 6px;
+  background-color: #ffffff;
 }
 
 /* 模式指示器 */
@@ -423,4 +437,15 @@ button:disabled {
   color: #fff;
   text-align: center;
   transition: background-color 0.3s;
+}
+
+/* L4 卸下组件按钮 — 克制的危险按钮 */
+#btn-dismantle {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+#btn-dismantle:hover:not(:disabled) {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
 }
