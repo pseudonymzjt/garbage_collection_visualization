@@ -46,6 +46,12 @@
         <button onclick="clearCanvas()">🧹 清空画布</button>
       </div>
 
+      <!-- 关卡操作按钮（仅关卡模式下显示） -->
+      <div id="level-action-buttons" class="btn-group" style="display: none;">
+        <h3>🎮 关卡操作</h3>
+        <button id="btn-dismantle" onclick="dismantleComponent()" style="background-color: #ef4444; display: none;">🗑️ 卸下组件</button>
+      </div>
+
       <!-- GC 运行按钮 -->
       <div class="btn-group">
         <h3>⚡ 垃圾回收</h3>

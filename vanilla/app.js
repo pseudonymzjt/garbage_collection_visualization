@@ -144,16 +144,26 @@ const LEVELS = [
       { id: 'e-listener-comp', from: 'listener', to: 'heavyComp' },
     ],
     javaCode: [
+      { text: '// 短生命周期组件，持有 80MB 大对象', alwaysNormal: true },
       { text: 'public class HeavyComponent implements Listener {', alwaysNormal: true },
       { text: '    private byte[] data = new byte[80 * 1024 * 1024];', alwaysNormal: true },
       { text: '', alwaysNormal: true },
+      { text: '    public HeavyComponent() {', alwaysNormal: true },
+      { text: '        // ⚠️ 向全局事件源注册（连线 e-pub-listener）', activeEdge: 'e-pub-listener', commentText: '        // ⚠️ 向全局事件源注册 ✅ 已解绑' },
+      { text: '        EventPublisher.register(this); // 泄漏源', activeEdge: 'e-pub-listener', commentText: '        // EventPublisher.register(this); // ✅ 已修复' },
+      { text: '    }', alwaysNormal: true },
+      { text: '', alwaysNormal: true },
       { text: '    public void onDestroy() {', alwaysNormal: true },
-      { text: '        // 从全局事件源注销监听器', alwaysNormal: true },
-      { text: '        EventPublisher.unregister(this); // ✅ 切断连线', activeEdge: 'e-pub-listener', commentText: '        // EventPublisher.unregister(this);' },
+      { text: '        // 🔴 忘记注销监听器！', activeEdge: 'e-pub-listener', commentText: '        // ✅ 已取消注册' },
+      { text: '        // EventPublisher.unregister(this);', activeEdge: 'e-pub-listener', commentText: '        EventPublisher.unregister(this); // ✅ 已注销' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
-    checkWin: function (nodes) { return !nodes.some(function (n) { return n.id === 'heavyComp'; }); },
+    checkWin: function (nodes) {
+      // heavyComp 被回收 且 e-pub-listener 连线已被切断
+      var listenerEdgeStillExists = edges.some(function (e) { return e.id === 'e-pub-listener'; });
+      return !nodes.some(function (n) { return n.id === 'heavyComp'; }) && !listenerEdgeStillExists;
+    },
   },
 
   // ---- Level 5: ThreadLocal 遗留 ----
@@ -178,10 +188,11 @@ const LEVELS = [
       { text: '', alwaysNormal: true },
       { text: '    public void doFilter() {', alwaysNormal: true },
       { text: '        try {', alwaysNormal: true },
+      { text: '            // 设置线程本地上下文（80MB）', alwaysNormal: true },
       { text: '            holder.set(new Context());', alwaysNormal: true },
       { text: '        } finally {', alwaysNormal: true },
-      { text: '            // 必须在 finally 中清理', alwaysNormal: true },
-      { text: '            holder.remove(); // ✅ 清理 ThreadLocal', activeEdge: 'e-tl-ctx', commentText: '            // holder.remove();' },
+      { text: '            // 🔴 忘记调用 remove()！', activeEdge: 'e-tl-ctx', commentText: '            // ✅ ThreadLocal 已清理' },
+      { text: '            // holder.remove();', activeEdge: 'e-tl-ctx', commentText: '            holder.remove(); // ✅ ThreadLocal 已清理' },
       { text: '        }', alwaysNormal: true },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
@@ -208,12 +219,19 @@ const LEVELS = [
       { id: 'e-task-comp', from: 'task', to: 'heavyComp' },
     ],
     javaCode: [
+      { text: 'import java.util.Timer;', alwaysNormal: true },
+      { text: 'import java.util.TimerTask;', alwaysNormal: true },
+      { text: '', alwaysNormal: true },
       { text: 'public class Service {', alwaysNormal: true },
-      { text: '    private Timer timer = new Timer();', alwaysNormal: true },
+      { text: '    private Timer timer = new Timer(); // 后台线程', alwaysNormal: true },
+      { text: '', alwaysNormal: true },
+      { text: '    public void start() {', alwaysNormal: true },
+      { text: '        timer.schedule(new HeavyTask(), 0, 1000);', alwaysNormal: true },
+      { text: '    }', alwaysNormal: true },
       { text: '', alwaysNormal: true },
       { text: '    public void stopService() {', alwaysNormal: true },
-      { text: '        // 停止后台线程', alwaysNormal: true },
-      { text: '        timer.cancel(); // ✅ 取消 Timer 释放整条链', activeEdge: 'e-root-timer', commentText: '        // timer.cancel();' },
+      { text: '        // 🔴 忘记 cancel() 导致 Timer 线程常驻', activeEdge: 'e-root-timer', commentText: '        // ✅ 定时器已取消' },
+      { text: '        // timer.cancel();', activeEdge: 'e-root-timer', commentText: '        timer.cancel(); // ✅ 已取消' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
@@ -492,6 +510,17 @@ function updateUI() {
     btnMS.style.opacity = '';
   }
 
+  // ---- Level 4 专属：显示 "卸下组件" 按钮 ----
+  var levelActionBtns = document.getElementById('level-action-buttons');
+  var btnDismantle = document.getElementById('btn-dismantle');
+  if (currentLevel === 4) {
+    levelActionBtns.style.display = 'block';
+    btnDismantle.style.display = 'block';
+  } else {
+    levelActionBtns.style.display = 'none';
+    btnDismantle.style.display = 'none';
+  }
+
   // 模式指示器
   var indicator = document.getElementById('mode-indicator');
   var levelData = getLevelData();
@@ -535,6 +564,10 @@ function updateUI() {
   var hintArea = document.getElementById('hint-area');
   var actionArea = document.getElementById('level-action-area');
 
+  // 重置 hint 样式（避免关卡切换后残留 L4 特殊样式）
+  hintArea.style.color = '';
+  hintArea.style.border = '';
+
   if (currentLevel > 0) {
     actionArea.innerHTML =
       '<button onclick="resetLevel()" style="background-color: #6b7280; width: 100%;">🔄 重置本关卡</button>';
@@ -545,7 +578,7 @@ function updateUI() {
       '💡 L1 提示：切断 staticCache → tempData 的连线，再运行 Mark-Sweep GC 回收 tempData（100MB）',
       '💡 L2 提示：📛 只能使用引用计数 GC！剪断环路中的一条边，使引用计数归零',
       '💡 L3 提示：删除冗余强引用边（Root → bigBuffer 和 HeavyComp → bigBuffer），使内存 ≤ 10MB',
-      '💡 L4 提示：卸下组件后，斩断 EventPublisher → Listener 的连接',
+      '💡 L4 提示：先点击「卸下组件」模拟销毁，再斩断 EventPublisher → Listener 的连接并运行 GC',
       '💡 L5 提示：切断 ThreadLocalMap → UserContext 的边来清理 ThreadLocal',
       '💡 L6 提示：清除 Timer 紫色节点与 JVM_Roots 的连接并运行 GC',
     ];
@@ -770,6 +803,47 @@ function resetLevel() {
   isDeleteEdgeMode = false;
   deleteEdgeFromId = null;
   render();
+}
+
+// ---- L4 专属：卸下组件 ----
+function dismantleComponent() {
+  if (isSimulating) return;
+  if (currentLevel !== 4) return;
+
+  var hintArea = document.getElementById('hint-area');
+  var listenerEdgeExists = edges.some(function (e) { return e.id === 'e-pub-listener'; });
+  var compExists = nodes.some(function (n) { return n.id === 'heavyComp'; });
+
+  if (!compExists) {
+    // 组件已被卸下，但仍需切断 Listener 注册
+    if (listenerEdgeExists) {
+      hintArea.innerHTML = '⚠️ HeavyComponent 已卸下！但 Listener 仍注册在 EventPublisher 上，请切断 e-pub-listener 连线！';
+      hintArea.style.color = '#f97316';
+      hintArea.style.border = '1px solid #f97316';
+    } else {
+      hintArea.innerHTML = '✅ 所有引用已切断，泄漏已修复！运行 GC 确认。';
+      hintArea.style.color = '#10b981';
+      hintArea.style.border = '1px solid #10b981';
+    }
+    return;
+  }
+
+  // 移除 listener → comp 的边，模拟"组件销毁"（断开监听器内部引用）
+  edges = edges.filter(function (e) { return e.id !== 'e-listener-comp'; });
+  // 从画布移除 HeavyComponent 节点
+  nodes = nodes.filter(function (n) { return n.id !== 'heavyComp'; });
+  render();
+
+  if (listenerEdgeExists) {
+    hintArea.innerHTML = '⚠️ 组件已卸下，但 EventPublisher 仍持有 Listener 引用！请切断 e-pub-listener 连线后运行 GC';
+    hintArea.style.color = '#f97316';
+    hintArea.style.border = '1px solid #f97316';
+  } else {
+    hintArea.innerHTML = '✅ Listener 已注销，所有引用已清除！运行 GC 释放内存吧';
+    hintArea.style.color = '#10b981';
+    hintArea.style.border = '1px solid #10b981';
+    checkWinCondition();
+  }
 }
 
 // 通关检测
