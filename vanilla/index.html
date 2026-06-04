@@ -29,9 +29,26 @@
       <!-- 关卡信息区 -->
       <div id="level-info-area"></div>
 
-      <!-- 通关徽章 -->
-      <div id="level-completed-badge" class="level-completed-badge" style="display: none;">
-        通关成功！内存泄漏已修复！
+      <!-- ===== 通关弹窗 ===== -->
+      <div id="congrats-overlay" class="congrats-overlay" style="display: none;">
+        <div class="congrats-modal">
+          <h2>恭喜通关！</h2>
+          <p class="congrats-message">Java 源码已成功重构！</p>
+          <div class="congrats-stats">
+            <div class="congrats-stat">
+              <span class="stat-label">释放内存</span>
+              <span id="freed-memory" class="stat-value">0 MB</span>
+            </div>
+            <div class="congrats-stat">
+              <span class="stat-label">关卡</span>
+              <span id="completed-level-label" class="stat-value">-</span>
+            </div>
+          </div>
+          <div class="congrats-actions">
+            <button id="btn-next-level" onclick="goToNextLevel()" class="btn-next">下一关</button>
+            <button onclick="closeCongratsOverlay()" class="btn-dismiss">继续查看</button>
+          </div>
+        </div>
       </div>
 
       <!-- 重置/沙盒提示 -->
@@ -64,7 +81,7 @@
       <div id="mode-indicator" class="mode-indicator">沙盒模式 — 自由编辑</div>
 
       <!-- 提示 -->
-      <div id="hint-area" class="sandbox-hint">沙盒模式 — 自由编辑画布，运行 GC 算法观察效果</div>
+      <div id="hint-area" class="sandbox-hint"></div>
     </div>
 
     <!-- ===== 中间主画布 ===== -->

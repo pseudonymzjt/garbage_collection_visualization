@@ -256,6 +256,53 @@ var levelCompleted = false;
 var nodeCounter = 2; // 从沙盒初始节点数开始
 var dragOccurred = false;
 
+// ---- 关卡锁定系统 ----
+var completedLevels = new Set();
+var initialMemory = 0;
+
+// 从 localStorage 恢复已通关记录
+(function loadCompletedLevels() {
+  try {
+    var saved = localStorage.getItem('gc-sandbox-completed');
+    if (saved) {
+      var arr = JSON.parse(saved);
+      arr.forEach(function (id) { completedLevels.add(id); });
+    }
+  } catch (e) { /* ignore */ }
+})();
+
+function isLevelUnlocked(levelId) {
+  if (levelId === 0) return true;  // 沙盒始终开放
+  if (levelId === 1) return true;  // L1 始终开放
+  return completedLevels.has(levelId - 1);
+}
+
+function saveCompletedLevels() {
+  try {
+    localStorage.setItem('gc-sandbox-completed', JSON.stringify(Array.from(completedLevels)));
+  } catch (e) { /* ignore */ }
+}
+
+function updateLevelSelectOptions() {
+  var select = document.getElementById('level-select');
+  var options = select.querySelectorAll('option');
+  var levelNames = [
+    '沙盒模式',
+    'L1: 静态集合膨胀',
+    'L2: 循环引用的孤岛',
+    'L3: 堆内存强引用解耦',
+    'L4: 监听器未注销',
+    'L5: ThreadLocal 遗留',
+    'L6: 未取消的后台 Timer'
+  ];
+  options.forEach(function (opt, idx) {
+    if (idx >= levelNames.length) return;
+    var unlocked = isLevelUnlocked(idx);
+    opt.disabled = !unlocked;
+    opt.textContent = unlocked ? levelNames[idx] : levelNames[idx] + ' [已锁定]';
+  });
+}
+
 // ============================================================
 // 第三部分：辅助函数
 // ============================================================
@@ -391,8 +438,7 @@ function generateSandboxJavaCode() {
   if (objNodes.length === 0) {
     return '<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 40px 20px;">' +
            '<p style="margin: 0 0 8px 0; font-size: 20px;">Sandbox</p>' +
-           '<p style="margin: 0;">使用左侧面板添加内存对象和引用连线</p>' +
-           '<p style="margin: 6px 0 0 0; font-size: 11px;">系统将根据您放置的节点图动态生成 Java 对照代码</p>' +
+           '<p style="margin: 0;">暂无内存对象</p>' +
            '</div>';
   }
 
@@ -650,6 +696,9 @@ function updateUI() {
   // 关卡选择器
   document.getElementById('level-select').disabled = isSimulating;
 
+  // 更新下拉框选项的锁定状态
+  updateLevelSelectOptions();
+
   // 连线按钮文字
   var linkBtn = document.getElementById('btn-link');
   if (linkingMode) {
@@ -734,40 +783,21 @@ function updateUI() {
   indicator.style.backgroundColor = bgColor;
   indicator.style.border = (isSimulating || linkingMode || isDeleteEdgeMode || currentLevel === 2) ? '1px solid transparent' : '1px solid #e2e8f0';
 
-  // 通关徽章
-  var badge = document.getElementById('level-completed-badge');
-  if (levelCompleted) {
-    badge.style.display = 'block';
+  // 通关弹窗
+  if (levelCompleted && currentLevel > 0) {
+    showCongratsOverlay();
   } else {
-    badge.style.display = 'none';
+    closeCongratsOverlay();
   }
 
   // 提示区 / 重置按钮
-  var hintArea = document.getElementById('hint-area');
   var actionArea = document.getElementById('level-action-area');
-
-  // 重置 hint 样式（避免关卡切换后残留 L4 特殊样式）
-  hintArea.style.color = '';
-  hintArea.style.border = '';
 
   if (currentLevel > 0) {
     actionArea.innerHTML =
       '<button onclick="resetLevel()" style="width: 100%;">重置本关卡</button>';
-
-    // 关卡专属提示
-    var levelHints = [
-      '', // 0: 沙盒
-      'L1 提示：切断 staticCache → tempData 的连线，再运行 Mark-Sweep GC 回收 tempData（100MB）',
-      'L2 提示：只能使用引用计数 GC！剪断环路中的一条边，使引用计数归零',
-      'L3 提示：删除冗余强引用边（Root → bigBuffer 和 HeavyComp → bigBuffer），使内存 ≤ 10MB',
-      'L4 提示：先点击「卸下组件」模拟销毁，再斩断 EventPublisher → Listener 的连接并运行 GC',
-      'L5 提示：切断 ThreadLocalMap → UserContext 的边来清理 ThreadLocal',
-      'L6 提示：清除 Timer 紫色节点与 JVM_Roots 的连接并运行 GC',
-    ];
-    hintArea.innerHTML = levelHints[currentLevel] || '提示：右键点击节点可快速删除（含关联边）';
   } else {
     actionArea.innerHTML = '';
-    hintArea.innerHTML = '沙盒模式 — 自由编辑画布，运行 GC 算法观察效果';
   }
 }
 
@@ -953,6 +983,13 @@ function handleMouseLeave() {
 
 function handleLevelChange(value) {
   var newLevel = parseInt(value, 10);
+
+  if (!isLevelUnlocked(newLevel)) {
+    // 不允许进入锁定关卡，回退到当前关卡
+    document.getElementById('level-select').value = currentLevel;
+    return;
+  }
+
   currentLevel = newLevel;
   var level = LEVELS[newLevel];
 
@@ -963,11 +1000,16 @@ function handleLevelChange(value) {
     return { id: e.id, from: e.from, to: e.to };
   });
   levelCompleted = false;
+  initialMemory = level.initialNodes.reduce(function (sum, n) { return sum + (n.size || 0); }, 0);
   linkingMode = false;
   linkingSourceId = null;
   isDeleteEdgeMode = false;
   deleteEdgeFromId = null;
   nodeCounter = level.initialNodes.length;
+
+  // 关闭可能还开着的通关弹窗
+  closeCongratsOverlay();
+
   render();
 }
 
@@ -999,11 +1041,11 @@ function dismantleComponent() {
   if (!compExists) {
     // 组件已被卸下，但仍需切断 Listener 注册
     if (listenerEdgeExists) {
-      hintArea.innerHTML = 'HeavyComponent 已卸下！但 Listener 仍注册在 EventPublisher 上，请切断 e-pub-listener 连线！';
+      hintArea.innerHTML = 'HeavyComponent 已卸下，但 Listener 仍注册中。';
       hintArea.style.color = '#c2410c';
       hintArea.style.border = '1px solid #f97316';
     } else {
-      hintArea.innerHTML = '所有引用已切断，泄漏已修复！运行 GC 确认。';
+      hintArea.innerHTML = '所有引用已切断，泄漏已修复。';
       hintArea.style.color = '#059669';
       hintArea.style.border = '1px solid #10b981';
     }
@@ -1017,11 +1059,11 @@ function dismantleComponent() {
   render();
 
   if (listenerEdgeExists) {
-    hintArea.innerHTML = '组件已卸下，但 EventPublisher 仍持有 Listener 引用！请切断 e-pub-listener 连线后运行 GC';
+    hintArea.innerHTML = '组件已卸下，EventPublisher 仍持有 Listener 引用。';
     hintArea.style.color = '#c2410c';
     hintArea.style.border = '1px solid #f97316';
   } else {
-    hintArea.innerHTML = 'Listener 已注销，所有引用已清除！运行 GC 释放内存吧';
+    hintArea.innerHTML = 'Listener 已注销，所有引用已清除。';
     hintArea.style.color = '#059669';
     hintArea.style.border = '1px solid #10b981';
     checkWinCondition();
@@ -1035,7 +1077,44 @@ function checkWinCondition() {
   var levelData = getLevelData();
   if (levelData.checkWin(nodes)) {
     levelCompleted = true;
+    // 记录通关
+    completedLevels.add(currentLevel);
+    saveCompletedLevels();
     render();
+  }
+}
+
+// ---- 通关弹窗 ----
+function showCongratsOverlay() {
+  var overlay = document.getElementById('congrats-overlay');
+  if (!overlay) return;
+
+  var freedMem = initialMemory - getActiveMemory();
+  document.getElementById('freed-memory').textContent = Math.max(0, freedMem) + ' MB';
+  document.getElementById('completed-level-label').textContent = getLevelData().name;
+
+  var nextBtn = document.getElementById('btn-next-level');
+  if (currentLevel < 6) {
+    nextBtn.style.display = 'inline-block';
+    nextBtn.textContent = '下一关';
+  } else {
+    nextBtn.style.display = 'none';
+  }
+
+  overlay.style.display = 'flex';
+}
+
+function closeCongratsOverlay() {
+  var overlay = document.getElementById('congrats-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function goToNextLevel() {
+  if (currentLevel < 6) {
+    closeCongratsOverlay();
+    var nextLevel = currentLevel + 1;
+    document.getElementById('level-select').value = nextLevel;
+    handleLevelChange(nextLevel);
   }
 }
 
@@ -1179,6 +1258,11 @@ async function runReferenceCounting() {
   edges = level.initialEdges.map(function (e) {
     return { id: e.id, from: e.from, to: e.to };
   });
+  initialMemory = level.initialNodes.reduce(function (sum, n) { return sum + (n.size || 0); }, 0);
   nodeCounter = level.initialNodes.length;
+
+  // 更新下拉框锁定状态
+  updateLevelSelectOptions();
+
   render();
 })();

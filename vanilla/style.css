@@ -140,15 +140,111 @@ body {
   color: #059669;
 }
 
-/* 通关状态 - 扁平 */
-.level-completed-badge {
-  background-color: #059669;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
+/* ===== 通关弹窗叠层 ===== */
+.congrats-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.congrats-modal {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 40px 48px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   text-align: center;
+}
+
+.congrats-modal h2 {
+  font-size: 1.6rem;
+  color: #059669;
+  margin: 0 0 8px 0;
   font-weight: bold;
+}
+
+.congrats-message {
+  color: #64748b;
   font-size: 14px;
+  margin: 0 0 24px 0;
+}
+
+.congrats-stats {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.congrats-stat {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 20px;
+  flex: 1;
+  max-width: 160px;
+}
+
+.congrats-stat .stat-label {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.congrats-stat .stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.congrats-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.congrats-actions button {
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.15s;
+}
+
+.btn-next {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+.btn-next:hover {
+  background-color: #1e293b;
+}
+
+.btn-dismiss {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+.btn-dismiss:hover {
+  background-color: #e2e8f0;
+}
+
+/* 已锁定关卡选项 */
+.level-selector select option:disabled {
+  color: #cbd5e1;
+  background-color: #f8fafc;
 }
 
 .btn-group {
