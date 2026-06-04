@@ -14,9 +14,9 @@
 
       <!-- 关卡选择器 -->
       <div class="level-selector">
-        <label for="level-select">🎯 关卡选择</label>
+        <label for="level-select">关卡选择</label>
         <select id="level-select" onchange="handleLevelChange(this.value)">
-          <option value="0">🛝 沙盒模式</option>
+          <option value="0">沙盒模式</option>
           <option value="1">L1: 静态集合膨胀</option>
           <option value="2">L2: 循环引用的孤岛</option>
           <option value="3">L3: 堆内存强引用解耦</option>
@@ -31,7 +31,7 @@
 
       <!-- 通关徽章 -->
       <div id="level-completed-badge" class="level-completed-badge" style="display: none;">
-        🏆 通关成功！内存泄漏已修复！
+        通关成功！内存泄漏已修复！
       </div>
 
       <!-- 重置/沙盒提示 -->
@@ -39,29 +39,29 @@
 
       <!-- 画布编辑工具 -->
       <div class="btn-group">
-        <h3>✏️ 画布编辑</h3>
+        <h3>画布编辑</h3>
         <button id="btn-add" onclick="addNode()">+ 新增内存对象</button>
-        <button id="btn-link" onclick="toggleLinkMode()">🔗 连线模式</button>
-        <button id="btn-delete-edge" onclick="toggleDeleteEdgeMode()">🗑️ 删除连线</button>
-        <button onclick="clearCanvas()">🧹 清空画布</button>
+        <button id="btn-link" onclick="toggleLinkMode()">连线模式</button>
+        <button id="btn-delete-edge" onclick="toggleDeleteEdgeMode()">删除连线</button>
+        <button onclick="clearCanvas()">清空画布</button>
       </div>
 
       <!-- 关卡操作按钮（仅关卡模式下显示） -->
       <div id="level-action-buttons" class="btn-group" style="display: none;">
-        <h3>🎮 关卡操作</h3>
-        <button id="btn-dismantle" onclick="dismantleComponent()" style="display: none;">🗑️ 卸下组件</button>
+        <h3>关卡操作</h3>
+        <button id="btn-dismantle" onclick="dismantleComponent()" style="display: none;">卸下组件</button>
       </div>
 
       <!-- GC 运行按钮 -->
       <div class="btn-group">
-        <h3>⚡ 垃圾回收</h3>
-        <button id="btn-ms" onclick="runMarkSweep()">⚡ 标记-清除 (Mark-Sweep)</button>
-        <button id="btn-rc" onclick="runReferenceCounting()">🔄 引用计数 (RC)</button>
-        <button id="btn-circular" onclick="loadCircularPreset()">🌀 加载：循环引用缺陷场景</button>
+        <h3>垃圾回收</h3>
+        <button id="btn-ms" onclick="runMarkSweep()">标记-清除 (Mark-Sweep)</button>
+        <button id="btn-rc" onclick="runReferenceCounting()">引用计数 (RC)</button>
+        <button id="btn-circular" onclick="loadCircularPreset()">加载：循环引用缺陷场景</button>
       </div>
 
       <!-- 模式指示器 -->
-      <div id="mode-indicator" class="mode-indicator">🖱️ 沙盒模式 — 自由编辑</div>
+      <div id="mode-indicator" class="mode-indicator">沙盒模式 — 自由编辑</div>
 
       <!-- 提示 -->
       <div id="hint-area" class="sandbox-hint">沙盒模式 — 自由编辑画布，运行 GC 算法观察效果</div>
@@ -89,7 +89,7 @@
     <!-- ===== 右侧 Java 代码对照面板 ===== -->
     <div class="code-panel">
       <h3>
-        📜 Java 代码对照
+        Java 代码对照
         <span class="code-lang-badge">JVM</span>
       </h3>
       <pre><code id="code-area">
@@ -97,12 +97,12 @@
       </code></pre>
       <!-- 图例说明 -->
       <div class="code-legend">
-        <div><span class="legend-dot" style="color: #eab308;">🟡</span> 高亮 = 泄漏代码（连线未断）</div>
-        <div><span class="legend-dot" style="color: #ef4444;">🔴</span> 删除线 = 已修复（连线已断）</div>
-        <div><span class="legend-dot" style="color: #059669;">🟢</span> 绿色 = GC Root</div>
-        <div><span class="legend-dot" style="color: #f97316;">🟠</span> 橙色 = 事件源</div>
-        <div><span class="legend-dot" style="color: #8b5cf6;">🟣</span> 紫色 = JVM 内部</div>
-        <div><span class="legend-dot" style="color: #64748b;">⚪</span> 灰色 = 普通对象</div>
+        <div><span class="legend-dot" style="background-color: #eab308;"></span> 高亮 = 泄漏代码（连线未断）</div>
+        <div><span class="legend-dot" style="background-color: #ef4444;"></span> 删除线 = 已修复（连线已断）</div>
+        <div><span class="legend-dot" style="background-color: #059669;"></span> 绿色 = GC Root</div>
+        <div><span class="legend-dot" style="background-color: #f97316;"></span> 橙色 = 事件源</div>
+        <div><span class="legend-dot" style="background-color: #8b5cf6;"></span> 紫色 = JVM 内部</div>
+        <div><span class="legend-dot" style="background-color: #64748b;"></span> 灰色 = 普通对象</div>
       </div>
     </div>
   </div>

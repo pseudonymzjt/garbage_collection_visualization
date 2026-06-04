@@ -11,7 +11,7 @@ const LEVELS = [
   // ---- Level 0: 沙盒模式 ----
   {
     id: 0,
-    name: '🛝 沙盒模式',
+    name: '沙盒模式',
     description: '自由编辑模式，不受关卡限制',
     goal: '自由探索 GC 算法工作原理，随意添加 / 删除节点和引用',
     memoryLimit: null,
@@ -388,12 +388,8 @@ function renderCodePanel() {
   var levelData = getLevelData();
 
   if (levelData.javaCode.length === 0) {
-    codeArea.innerHTML =
-      '<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 40px 20px;">' +
-      '<p style="margin: 0 0 8px 0; font-size: 24px;">🛝</p>' +
-      '<p style="margin: 0;">沙盒模式 — 暂无 Java 代码对照</p>' +
-      '<p style="margin: 6px 0 0 0; font-size: 11px;">选择一个关卡查看对应的泄漏场景源码</p>' +
-      '</div>';
+    // 沙盒模式：动态生成 Java 对照代码
+    codeArea.innerHTML = generateSandboxJavaCode();
     return;
   }
 
@@ -457,10 +453,10 @@ function renderLevelInfo() {
 
   infoArea.innerHTML =
     '<div class="level-info">' +
-    '<h3>📌 ' + levelData.name + '</h3>' +
+    '<h3>' + levelData.name + '</h3>' +
     '<p class="level-description">' + levelData.description + '</p>' +
-    '<p class="level-goal">🎯 目标：' + levelData.goal + '</p>' +
-    (levelData.memoryLimit ? '<p class="level-memory">💾 限制：活动内存 ≤ ' + levelData.memoryLimit + ' MB</p>' : '') +
+    '<p class="level-goal">目标：' + levelData.goal + '</p>' +
+    (levelData.memoryLimit ? '<p class="level-memory">限制：活动内存 ≤ ' + levelData.memoryLimit + ' MB</p>' : '') +
     memoryHtml +
     '</div>';
 }
@@ -479,12 +475,12 @@ function updateUI() {
   // 连线按钮文字
   var linkBtn = document.getElementById('btn-link');
   if (linkingMode) {
-    linkBtn.textContent = '❌ 退出连线模式';
+    linkBtn.textContent = '退出连线模式';
     linkBtn.style.backgroundColor = '';
     linkBtn.style.color = '#ef4444';
     linkBtn.style.borderColor = '#ef4444';
   } else {
-    linkBtn.textContent = '🔗 连线模式';
+    linkBtn.textContent = '连线模式';
     linkBtn.style.backgroundColor = '';
     linkBtn.style.color = '';
     linkBtn.style.borderColor = '';
@@ -493,12 +489,12 @@ function updateUI() {
   // 删除连线按钮文字
   var delBtn = document.getElementById('btn-delete-edge');
   if (isDeleteEdgeMode) {
-    delBtn.textContent = '❌ 退出删除连线';
+    delBtn.textContent = '退出删除连线';
     delBtn.style.backgroundColor = '';
     delBtn.style.color = '#ef4444';
     delBtn.style.borderColor = '#ef4444';
   } else {
-    delBtn.textContent = '🗑️ 删除连线';
+    delBtn.textContent = '删除连线';
     delBtn.style.backgroundColor = '';
     delBtn.style.color = '';
     delBtn.style.borderColor = '';
@@ -510,11 +506,11 @@ function updateUI() {
   // Level 2: 强制执行引用计数（禁用 Mark-Sweep）
   if (currentLevel === 2) {
     btnMS.disabled = true;
-    btnMS.title = '❌ 本关卡限定使用引用计数 GC';
+    btnMS.title = '本关卡限定使用引用计数 GC';
     btnMS.style.opacity = '0.4';
     btnRC.title = '使用引用计数 GC 解开循环引用';
   } else {
-    btnMS.title = '⚡ 标记-清除 (Mark-Sweep)';
+    btnMS.title = '标记-清除 (Mark-Sweep)';
     btnMS.style.opacity = '';
   }
 
@@ -538,22 +534,22 @@ function updateUI() {
 
   if (isSimulating) {
     bgColor = '#c2410c';
-    text = '⏳ 模拟运行中...';
+    text = '模拟运行中...';
   } else if (linkingMode) {
     bgColor = '#1d4ed8';
-    text = '🔗 连线模式 — 点击两个节点建立引用';
+    text = '连线模式 — 点击两个节点建立引用';
   } else if (isDeleteEdgeMode) {
     bgColor = '#dc2626';
-    text = '🗑️ 删除连线模式 — 依次点击两节点';
+    text = '删除连线模式 — 依次点击两节点';
   } else if (currentLevel === 2) {
     bgColor = '#c2410c';
-    text = '🔒 关卡 2 限制：仅可使用引用计数 (RC) 回收';
+    text = '关卡 2 限制：仅可使用引用计数 (RC) 回收';
   } else if (currentLevel > 0) {
     bgColor = '#0f172a';
-    text = '🎮 ' + levelData.name + ' — 按目标操作';
+    text = levelData.name + ' — 按目标操作';
   } else {
     bgColor = '#0f172a';
-    text = '🖱️ 沙盒模式 — 自由编辑';
+    text = '沙盒模式 — 自由编辑';
   }
 
   indicator.textContent = text;
@@ -578,19 +574,19 @@ function updateUI() {
 
   if (currentLevel > 0) {
     actionArea.innerHTML =
-      '<button onclick="resetLevel()" style="width: 100%;">🔄 重置本关卡</button>';
+      '<button onclick="resetLevel()" style="width: 100%;">重置本关卡</button>';
 
     // 关卡专属提示
     var levelHints = [
       '', // 0: 沙盒
-      '💡 L1 提示：切断 staticCache → tempData 的连线，再运行 Mark-Sweep GC 回收 tempData（100MB）',
-      '💡 L2 提示：📛 只能使用引用计数 GC！剪断环路中的一条边，使引用计数归零',
-      '💡 L3 提示：删除冗余强引用边（Root → bigBuffer 和 HeavyComp → bigBuffer），使内存 ≤ 10MB',
-      '💡 L4 提示：先点击「卸下组件」模拟销毁，再斩断 EventPublisher → Listener 的连接并运行 GC',
-      '💡 L5 提示：切断 ThreadLocalMap → UserContext 的边来清理 ThreadLocal',
-      '💡 L6 提示：清除 Timer 紫色节点与 JVM_Roots 的连接并运行 GC',
+      'L1 提示：切断 staticCache → tempData 的连线，再运行 Mark-Sweep GC 回收 tempData（100MB）',
+      'L2 提示：只能使用引用计数 GC！剪断环路中的一条边，使引用计数归零',
+      'L3 提示：删除冗余强引用边（Root → bigBuffer 和 HeavyComp → bigBuffer），使内存 ≤ 10MB',
+      'L4 提示：先点击「卸下组件」模拟销毁，再斩断 EventPublisher → Listener 的连接并运行 GC',
+      'L5 提示：切断 ThreadLocalMap → UserContext 的边来清理 ThreadLocal',
+      'L6 提示：清除 Timer 紫色节点与 JVM_Roots 的连接并运行 GC',
     ];
-    hintArea.innerHTML = levelHints[currentLevel] || '💡 提示：右键点击节点可快速删除（含关联边）';
+    hintArea.innerHTML = levelHints[currentLevel] || '提示：右键点击节点可快速删除（含关联边）';
   } else {
     actionArea.innerHTML = '';
     hintArea.innerHTML = '沙盒模式 — 自由编辑画布，运行 GC 算法观察效果';
@@ -825,11 +821,11 @@ function dismantleComponent() {
   if (!compExists) {
     // 组件已被卸下，但仍需切断 Listener 注册
     if (listenerEdgeExists) {
-      hintArea.innerHTML = '⚠️ HeavyComponent 已卸下！但 Listener 仍注册在 EventPublisher 上，请切断 e-pub-listener 连线！';
+      hintArea.innerHTML = 'HeavyComponent 已卸下！但 Listener 仍注册在 EventPublisher 上，请切断 e-pub-listener 连线！';
       hintArea.style.color = '#c2410c';
       hintArea.style.border = '1px solid #f97316';
     } else {
-      hintArea.innerHTML = '✅ 所有引用已切断，泄漏已修复！运行 GC 确认。';
+      hintArea.innerHTML = '所有引用已切断，泄漏已修复！运行 GC 确认。';
       hintArea.style.color = '#059669';
       hintArea.style.border = '1px solid #10b981';
     }
@@ -843,11 +839,12 @@ function dismantleComponent() {
   render();
 
   if (listenerEdgeExists) {
-    hintArea.innerHTML = '⚠️ 组件已卸下，但 EventPublisher 仍持有 Listener 引用！请切断 e-pub-listener 连线后运行 GC';
+  if (listenerEdgeExists) {
+    hintArea.innerHTML = '组件已卸下，但 EventPublisher 仍持有 Listener 引用！请切断 e-pub-listener 连线后运行 GC';
     hintArea.style.color = '#c2410c';
     hintArea.style.border = '1px solid #f97316';
   } else {
-    hintArea.innerHTML = '✅ Listener 已注销，所有引用已清除！运行 GC 释放内存吧';
+    hintArea.innerHTML = 'Listener 已注销，所有引用已清除！运行 GC 释放内存吧';
     hintArea.style.color = '#059669';
     hintArea.style.border = '1px solid #10b981';
     checkWinCondition();

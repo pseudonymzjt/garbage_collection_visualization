@@ -310,7 +310,11 @@ button:disabled {
 
 .code-legend .legend-dot {
   display: inline-block;
-  width: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
 }
 
 /* ===== 内存块节点 ===== */
