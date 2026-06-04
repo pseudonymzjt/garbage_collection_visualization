@@ -1,4 +1,4 @@
-/* src/App.css */
+/* ===== 全局重置 ===== */
 * {
   box-sizing: border-box;
 }
@@ -7,9 +7,10 @@ body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #0f172a; /* 深 slate 蓝背景 */
+  background-color: #0f172a;
   color: #f8fafc;
   height: 100vh;
+  overflow: hidden;
 }
 
 /* ===== 主界面布局 ===== */
@@ -111,6 +112,32 @@ body {
   font-weight: 500;
 }
 
+/* 内存指示器 */
+.memory-indicator {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 6px 10px;
+  background-color: #0f172a;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.memory-indicator .memory-value {
+  color: #f97316;
+  font-weight: bold;
+}
+
+.memory-indicator .memory-limit {
+  color: #60a5fa;
+}
+
+.memory-indicator .memory-value.within-limit {
+  color: #10b981;
+}
+
 /* 通关状态 */
 .level-completed-badge {
   background-color: #059669;
@@ -132,6 +159,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.btn-group h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #94a3b8;
 }
 
 button {
@@ -208,6 +241,7 @@ button:disabled {
   border: 1px solid #1f2937;
   margin: 0;
   min-height: 100px;
+  flex-grow: 1;
 }
 
 .code-panel pre code {
@@ -251,12 +285,20 @@ button:disabled {
   text-decoration: none;
 }
 
-/* 重复连线警告 */
-.dup-edge-warning {
-  font-size: 12px;
-  color: #f87171;
-  margin: 0;
-  padding: 4px 0;
+/* 代码图例 */
+.code-legend {
+  font-size: 11px;
+  color: #4b5563;
+  border-top: 1px solid #1f2937;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.code-legend .legend-dot {
+  display: inline-block;
+  width: 14px;
 }
 
 /* ===== 内存块节点 ===== */
@@ -265,7 +307,7 @@ button:disabled {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #475569; /* 默认灰色 — object 类型 */
+  background-color: #475569;
   color: white;
   display: flex;
   flex-direction: column;
@@ -285,25 +327,21 @@ button:disabled {
   cursor: grabbing;
 }
 
-/* —— JVM 语义节点类型颜色 —— */
-
-/* 🟢 根节点（GC Root）：静态变量、线程栈、JNI */
+/* 🟢 根节点 */
 .node.root-node {
   background-color: #10b981;
   border-color: #059669;
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
 }
 
-/* 🔘 普通对象（默认灰色，已在 .node 中定义）*/
-
-/* 🟠 事件源/发布者（DOM 类型） */
+/* 🟠 事件源/发布者 */
 .node.dom-node {
   background-color: #f97316;
   border-color: #ea580c;
   box-shadow: 0 0 8px rgba(249, 115, 22, 0.3);
 }
 
-/* 🟣 JVM 内部对象（ThreadLocalMap, Timer, Listener） */
+/* 🟣 JVM 内部对象 */
 .node.purple-node {
   background-color: #8b5cf6;
   border-color: #7c3aed;
@@ -324,19 +362,19 @@ button:disabled {
   white-space: nowrap;
 }
 
-/* 连线模式下被选中的源节点：蓝色边框 */
+/* 连线模式下被选中的源节点 */
 .node.linking-source {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 14px rgba(59, 130, 246, 0.6) !important;
 }
 
-/* 删除连线模式下被选中的源节点：红色边框 */
+/* 删除连线模式下被选中的源节点 */
 .node.delete-target {
   border-color: #ef4444 !important;
   box-shadow: 0 0 14px rgba(239, 68, 68, 0.6) !important;
 }
 
-/* 标记阶段高亮：黄色 */
+/* 标记阶段高亮 */
 .node.marked-node {
   background-color: #eab308 !important;
   border-color: #ca8a04 !important;
@@ -344,7 +382,7 @@ button:disabled {
   z-index: 2;
 }
 
-/* 正在被回收清除：淡出缩小 */
+/* 正在被回收清除 */
 .node.sweeping-node {
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.2);
@@ -352,7 +390,7 @@ button:disabled {
   z-index: 0;
 }
 
-/* 节点上方的引用计数角标 */
+/* 引用计数角标 */
 .ref-count-badge {
   position: absolute;
   top: -10px;
@@ -376,27 +414,13 @@ button:disabled {
   border-radius: 6px;
 }
 
-/* 内存总量指示器 */
-.memory-indicator {
-  font-size: 12px;
-  color: #94a3b8;
-  padding: 6px 10px;
-  background-color: #0f172a;
+/* 模式指示器 */
+.mode-indicator {
+  padding: 8px 12px;
   border-radius: 6px;
-  border: 1px solid #334155;
-  display: flex;
-  justify-content: space-between;
-}
-
-.memory-indicator .memory-value {
-  color: #f97316;
+  font-size: 13px;
   font-weight: bold;
-}
-
-.memory-indicator .memory-limit {
-  color: #60a5fa;
-}
-
-.memory-indicator .memory-value.within-limit {
-  color: #10b981;
+  color: #fff;
+  text-align: center;
+  transition: background-color 0.3s;
 }
