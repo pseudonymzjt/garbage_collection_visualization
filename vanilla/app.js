@@ -51,7 +51,7 @@ const LEVELS = [
       { text: '        // 创建 100MB 临时数据', alwaysNormal: true },
       { text: '        Object tempData = new byte[100 * 1024 * 1024];', alwaysNormal: true },
       { text: '        // 连线存在时 => 泄漏（高亮）', alwaysNormal: true },
-      { text: '        cache.add(tempData);', activeEdge: 'e-cache-temp', commentText: '        // cache.add(tempData); // ✅ 已解绑' },
+      { text: '        cache.add(tempData);', activeEdge: 'e-cache-temp', commentText: '        // cache.add(tempData); // 已解绑' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
@@ -80,7 +80,7 @@ const LEVELS = [
       { text: 'Node b = new Node();', alwaysNormal: true },
       { text: 'Node c = new Node();', alwaysNormal: true },
       { text: 'b.next = c;', alwaysNormal: true },
-      { text: 'c.next = b; // 👈 剪断此线使引用计数归零', activeEdge: 'e-c-b', commentText: 'c.next = b; // ✅ 已解绑' },
+      { text: 'c.next = b; // 剪断此线使引用计数归零', activeEdge: 'e-c-b', commentText: 'c.next = b; // 已解绑' },
       { text: '', alwaysNormal: true },
       { text: '// 引用计数面对循环引用时的局限性：', alwaysNormal: true },
       { text: '// 即使 Root 不再引用，b 和 c 互相持有', alwaysNormal: true },
@@ -110,12 +110,12 @@ const LEVELS = [
       { text: 'public class DataHandler {', alwaysNormal: true },
       { text: '    private byte[] bigBuffer = new byte[150 * 1024 * 1024];', alwaysNormal: true },
       { text: '', alwaysNormal: true },
-      { text: '    // ⚠️ 冗余直接引用 (Root → bigBuffer)', alwaysNormal: true },
-      { text: '    // 需断开此冗余链路', activeEdge: 'e-root-buf', commentText: '    // ✅ 冗余直接引用已断开' },
+      { text: '    // 冗余直接引用 (Root \u2192 bigBuffer)', alwaysNormal: true },
+      { text: '    // 需断开此冗余链路', activeEdge: 'e-root-buf', commentText: '    // 冗余直接引用已断开' },
       { text: '', alwaysNormal: true },
       { text: '    public void clear() {', alwaysNormal: true },
       { text: '        // 切断核心引用 (HeavyComp → bigBuffer)', alwaysNormal: true },
-      { text: '        this.bigBuffer = null; // ✅ 释放强引用', activeEdge: 'e-comp-buf', commentText: '        // this.bigBuffer = null; // ✅ 已释放' },
+      { text: '        this.bigBuffer = null; // 释放强引用', activeEdge: 'e-comp-buf', commentText: '        // this.bigBuffer = null; // 已释放' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
@@ -149,13 +149,13 @@ const LEVELS = [
       { text: '    private byte[] data = new byte[80 * 1024 * 1024];', alwaysNormal: true },
       { text: '', alwaysNormal: true },
       { text: '    public HeavyComponent() {', alwaysNormal: true },
-      { text: '        // ⚠️ 向全局事件源注册（连线 e-pub-listener）', activeEdge: 'e-pub-listener', commentText: '        // ⚠️ 向全局事件源注册 ✅ 已解绑' },
-      { text: '        EventPublisher.register(this); // 泄漏源', activeEdge: 'e-pub-listener', commentText: '        // EventPublisher.register(this); // ✅ 已修复' },
+      { text: '        // 向全局事件源注册（连线 e-pub-listener）', activeEdge: 'e-pub-listener', commentText: '        // 向全局事件源注册 已解绑' },
+      { text: '        EventPublisher.register(this); // 泄漏源', activeEdge: 'e-pub-listener', commentText: '        // EventPublisher.register(this); // 已修复' },
       { text: '    }', alwaysNormal: true },
       { text: '', alwaysNormal: true },
       { text: '    public void onDestroy() {', alwaysNormal: true },
-      { text: '        // 🔴 忘记注销监听器！', activeEdge: 'e-pub-listener', commentText: '        // ✅ 已取消注册' },
-      { text: '        // EventPublisher.unregister(this);', activeEdge: 'e-pub-listener', commentText: '        EventPublisher.unregister(this); // ✅ 已注销' },
+      { text: '        // 忘记注销监听器！', activeEdge: 'e-pub-listener', commentText: '        // 已取消注册' },
+      { text: '        // EventPublisher.unregister(this);', activeEdge: 'e-pub-listener', commentText: '        EventPublisher.unregister(this); // 已注销' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
@@ -191,8 +191,8 @@ const LEVELS = [
       { text: '            // 设置线程本地上下文（80MB）', alwaysNormal: true },
       { text: '            holder.set(new Context());', alwaysNormal: true },
       { text: '        } finally {', alwaysNormal: true },
-      { text: '            // 🔴 忘记调用 remove()！', activeEdge: 'e-tl-ctx', commentText: '            // ✅ ThreadLocal 已清理' },
-      { text: '            // holder.remove();', activeEdge: 'e-tl-ctx', commentText: '            holder.remove(); // ✅ ThreadLocal 已清理' },
+      { text: '            // 忘记调用 remove()！', activeEdge: 'e-tl-ctx', commentText: '            // ThreadLocal 已清理' },
+      { text: '            // holder.remove();', activeEdge: 'e-tl-ctx', commentText: '            holder.remove(); // ThreadLocal 已清理' },
       { text: '        }', alwaysNormal: true },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
@@ -230,8 +230,8 @@ const LEVELS = [
       { text: '    }', alwaysNormal: true },
       { text: '', alwaysNormal: true },
       { text: '    public void stopService() {', alwaysNormal: true },
-      { text: '        // 🔴 忘记 cancel() 导致 Timer 线程常驻', activeEdge: 'e-root-timer', commentText: '        // ✅ 定时器已取消' },
-      { text: '        // timer.cancel();', activeEdge: 'e-root-timer', commentText: '        timer.cancel(); // ✅ 已取消' },
+      { text: '        // 忘记 cancel() 导致 Timer 线程常驻', activeEdge: 'e-root-timer', commentText: '        // 定时器已取消' },
+      { text: '        // timer.cancel();', activeEdge: 'e-root-timer', commentText: '        timer.cancel(); // 已取消' },
       { text: '    }', alwaysNormal: true },
       { text: '}', alwaysNormal: true },
     ],
@@ -382,7 +382,185 @@ function renderLines() {
   });
 }
 
-// ---- 4.3 渲染代码面板 ----
+// ---- 4.3 沙盒模式：根据当前节点图动态生成 Java 对照代码 ----
+function generateSandboxJavaCode() {
+  var objNodes = nodes.filter(function (n) { return !n.isRoot; });
+  var rootNodes = nodes.filter(function (n) { return n.isRoot; });
+
+  // 尚无用户节点时显示引导信息
+  if (objNodes.length === 0) {
+    return '<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 40px 20px;">' +
+           '<p style="margin: 0 0 8px 0; font-size: 20px;">Sandbox</p>' +
+           '<p style="margin: 0;">使用左侧面板添加内存对象和引用连线</p>' +
+           '<p style="margin: 6px 0 0 0; font-size: 11px;">系统将根据您放置的节点图动态生成 Java 对照代码</p>' +
+           '</div>';
+  }
+
+  var html = '';
+  var lineNum = 0;
+
+  function addLine(text, cls) {
+    lineNum++;
+    cls = cls || 'normal';
+    html += '<span class="code-line ' + cls + '">' +
+            '<span class="code-line-number">' + lineNum + '</span>' +
+            escapeHtml(text) +
+            '</span>';
+  }
+
+  // ---- 类型推断辅助 ----
+  function getTypeName(node) {
+    if (node.type === 'dom') return 'EventListener';
+    if (node.type === 'purple') return 'ThreadLocal';
+    if (node.isRoot) return 'GC Root';
+    if (node.size > 100) return 'byte[]';
+    if (node.size > 50) return 'byte[]';
+    if (node.size > 0) return 'byte[]';
+    return 'Object';
+  }
+
+  function getVarName(name) {
+    // 保持原名但首字母小写
+    return name.charAt(0).toLowerCase() + name.slice(1);
+  }
+
+  // ---- 生成代码 ----
+  addLine('public class SandboxMemory {', 'normal');
+  addLine('', 'normal');
+  addLine('    // ======== 内存对象图 ========', 'normal');
+  addLine('    // Root 节点: ' + rootNodes.map(function (r) { return r.name; }).join(', '), 'normal');
+  addLine('    // 对象总数: ' + objNodes.length + ' | 总内存: ' + getActiveMemory() + 'MB', 'normal');
+  addLine('', 'normal');
+
+  // 1) 从 Root 出发的静态引用
+  var hasStaticRef = false;
+  rootNodes.forEach(function (root) {
+    var outgoing = edges.filter(function (e) { return e.from === root.id; });
+    outgoing.forEach(function (e) {
+      var target = null;
+      for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].id === e.to) { target = nodes[i]; break; }
+      }
+      if (target && !target.isRoot) {
+        hasStaticRef = true;
+        addLine('    // GC Root "' + root.name + '" 持有 ' + target.name, 'normal');
+        addLine('    private static ' + getTypeName(target) + ' ' + getVarName(target.name) + ';', 'normal');
+      }
+    });
+  });
+
+  if (hasStaticRef) {
+    addLine('', 'normal');
+  }
+
+  addLine('    public static void main(String[] args) {', 'normal');
+
+  // 2) 对象分配（按是否有入边排序：有引用的先分配）
+  var sortedObjs = objNodes.slice().sort(function (a, b) {
+    var inA = edges.filter(function (e) { return e.to === a.id; }).length;
+    var inB = edges.filter(function (e) { return e.to === b.id; }).length;
+    return inB - inA; // 引用多的先分配
+  });
+
+  sortedObjs.forEach(function (node) {
+    var incomingEdges = edges.filter(function (e) { return e.to === node.id; });
+    var outgoingEdges = edges.filter(function (e) { return e.from === node.id; });
+    var refCount = incomingEdges.length;
+    var typeName = getTypeName(node);
+    var varName = getVarName(node.name);
+    var refFromRoot = incomingEdges.some(function (e) {
+      return rootNodes.some(function (r) { return r.id === e.from; });
+    });
+
+    addLine('', 'normal');
+
+    // 注释：节点信息
+    var comment = '    // ' + node.name;
+    if (node.size > 0) comment += ' | ' + node.size + 'MB';
+    if (refFromRoot) comment += ' | 被 GC Root 引用';
+    comment += ' | 入边: ' + refCount + ' | 出边: ' + outgoingEdges.length;
+    addLine(comment, 'normal');
+
+    // 分配语句
+    if (typeName === 'byte[]' && node.size > 0) {
+      addLine('    ' + typeName + ' ' + varName + ' = new byte[' + node.size + ' * 1024 * 1024];', 'normal');
+    } else if (typeName === 'EventListener') {
+      addLine('    ' + typeName + ' ' + varName + ' = new EventListener() {', 'normal');
+      addLine('        public void onEvent(Object data) {', 'normal');
+      addLine('            // handle event...', 'normal');
+      addLine('        }', 'normal');
+      addLine('    };', 'normal');
+    } else if (typeName === 'ThreadLocal') {
+      addLine('    ' + typeName + '<Object> ' + varName + ' = new ThreadLocal<>();', 'normal');
+      addLine('    ' + varName + '.set(new byte[' + (node.size || 5) + ' * 1024 * 1024]);', 'normal');
+    } else {
+      addLine('    ' + typeName + ' ' + varName + ' = new Object();', 'normal');
+    }
+
+    // 出边：显示引用关系
+    outgoingEdges.forEach(function (e) {
+      var target = null;
+      for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].id === e.to) { target = nodes[i]; break; }
+      }
+      if (target) {
+        var tVar = getVarName(target.name);
+        if (typeName === 'byte[]') {
+          addLine('    // ' + varName + ' → ' + target.name + ' (byte[] 持有引用)', 'normal');
+        } else {
+          addLine('    ' + varName + '.reference = ' + tVar + ';', 'normal');
+        }
+      }
+    });
+  });
+
+  addLine('', 'normal');
+  addLine('    // ======== 当前引用关系 ========', 'normal');
+
+  // 3) 汇总所有引用
+  edges.forEach(function (e) {
+    var src = null, tgt = null;
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].id === e.from) src = nodes[i];
+      if (nodes[i].id === e.to) tgt = nodes[i];
+    }
+    if (src && tgt) {
+      addLine('    // ' + src.name + ' ──→ ' + tgt.name, 'normal');
+    }
+  });
+
+  addLine('', 'normal');
+  addLine('    // ======== GC 分析 ========', 'normal');
+  // 找出不可达对象（从 root BFS 可达性分析）
+  var reachable = new Set();
+  var queue = [];
+  rootNodes.forEach(function (r) { queue.push(r.id); });
+  while (queue.length > 0) {
+    var c = queue.shift();
+    if (reachable.has(c)) continue;
+    reachable.add(c);
+    edges.filter(function (e) { return e.from === c; }).forEach(function (e) {
+      queue.push(e.to);
+    });
+  }
+
+  objNodes.forEach(function (n) {
+    if (!reachable.has(n.id)) {
+      addLine('    // ! ' + n.name + ' 不可达 — GC 可回收 ' + (n.size || 0) + 'MB', 'normal');
+    }
+  });
+
+  var reachableCount = objNodes.filter(function (n) { return reachable.has(n.id); }).length;
+  var unreachableCount = objNodes.length - reachableCount;
+  addLine('    // 可到达对象: ' + reachableCount + ' | 垃圾对象: ' + unreachableCount + ' | 活跃内存: ' + getActiveMemory() + 'MB', 'normal');
+
+  addLine('    }', 'normal');
+  addLine('}', 'normal');
+
+  return html;
+}
+
+// ---- 4.4 渲染代码面板 ----
 function renderCodePanel() {
   var codeArea = document.getElementById('code-area');
   var levelData = getLevelData();
@@ -838,7 +1016,6 @@ function dismantleComponent() {
   nodes = nodes.filter(function (n) { return n.id !== 'heavyComp'; });
   render();
 
-  if (listenerEdgeExists) {
   if (listenerEdgeExists) {
     hintArea.innerHTML = '组件已卸下，但 EventPublisher 仍持有 Listener 引用！请切断 e-pub-listener 连线后运行 GC';
     hintArea.style.color = '#c2410c';
