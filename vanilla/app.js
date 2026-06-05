@@ -752,28 +752,20 @@ function updateUI() {
   var linkBtn = document.getElementById('btn-link');
   if (linkingMode) {
     linkBtn.textContent = '退出连线模式';
-    linkBtn.style.backgroundColor = '';
-    linkBtn.style.color = '#ef4444';
-    linkBtn.style.borderColor = '#ef4444';
+    linkBtn.classList.add('btn-active');
   } else {
     linkBtn.textContent = '连线模式';
-    linkBtn.style.backgroundColor = '';
-    linkBtn.style.color = '';
-    linkBtn.style.borderColor = '';
+    linkBtn.classList.remove('btn-active');
   }
 
   // 删除连线按钮文字
   var delBtn = document.getElementById('btn-delete-edge');
   if (isDeleteEdgeMode) {
     delBtn.textContent = '退出删除连线';
-    delBtn.style.backgroundColor = '';
-    delBtn.style.color = '#ef4444';
-    delBtn.style.borderColor = '#ef4444';
+    delBtn.classList.add('btn-active');
   } else {
     delBtn.textContent = '删除连线';
-    delBtn.style.backgroundColor = '';
-    delBtn.style.color = '';
-    delBtn.style.borderColor = '';
+    delBtn.classList.remove('btn-active');
   }
 
   // ---- 关卡级别按钮禁用 ----
